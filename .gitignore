@@ -1,0 +1,24 @@
+# Compiler output
+cache/
+out/
+
+# Ignores development broadcast logs
+broadcast/
+!/broadcast/*/31337/
+
+# Dotenv file
+.env
+.env.local
+
+# Dependencies
+node_modules/
+
+# Coverage
+lcov.info
+
+# OS files
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
