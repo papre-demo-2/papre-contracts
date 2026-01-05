@@ -56,22 +56,99 @@ Papre is a modular smart contract protocol for creating composable legal agreeme
 | State | `DeadlineClauseLogicV3` | Time-based triggers |
 | CrossChain | `CrossChainClauseLogicV3` | CCIP messaging |
 
-## Installation
+## Getting Started
+
+### Prerequisites
+
+- **Foundry** - Solidity development toolkit
+- **Node.js 18+** - For npm dependencies (Chainlink)
+
+### Installing Foundry
+
+If you don't have Foundry installed:
 
 ```bash
-# Clone the repo
+# Install Foundry
+curl -L https://foundry.paradigm.xyz | bash
+
+# Reload your shell, then run:
+foundryup
+```
+
+Verify installation:
+```bash
+forge --version
+```
+
+### Quick Start
+
+```bash
+# 1. Clone the repo
 git clone https://github.com/papre-demo-2/papre-contracts.git
 cd papre-contracts
 
-# Install dependencies
+# 2. Install Foundry dependencies (OpenZeppelin, forge-std)
 forge install
+
+# 3. Install npm dependencies (Chainlink CCIP)
 npm install
 
-# Build
+# 4. Build contracts
 forge build
 
-# Test
+# 5. Run tests
 forge test
+```
+
+### Environment Variables (for deployment)
+
+For deploying to testnets/mainnet, create a `.env` file:
+
+```bash
+# Private key for deployments (never commit this!)
+DEPLOYER_PRIVATE_KEY=0x...
+
+# RPC URLs
+FUJI_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
+MAINNET_RPC_URL=https://api.avax.network/ext/bc/C/rpc
+
+# Verification (optional)
+SNOWTRACE_API_KEY=...
+```
+
+Then source it:
+```bash
+source .env
+```
+
+## Development
+
+### Build
+
+```bash
+forge build
+```
+
+### Test
+
+```bash
+# Run all tests
+forge test
+
+# Run tests with gas report
+forge test --gas-report
+
+# Run specific test
+forge test --match-test testFunctionName
+
+# Run with verbosity
+forge test -vvvv
+```
+
+### Coverage
+
+```bash
+forge coverage
 ```
 
 ## Deployment
@@ -79,32 +156,47 @@ forge test
 ### Local (Anvil)
 
 ```bash
-forge script script/DeployLocal.s.sol --broadcast
+# Start Anvil in one terminal
+anvil
+
+# Deploy in another terminal
+forge script script/DeployLocal.s.sol --broadcast --rpc-url http://localhost:8545
 ```
 
 ### Fuji Testnet
 
 ```bash
-# Set environment variables
-export DEPLOYER_PRIVATE_KEY=<your-key>
-export FUJI_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
+# Make sure .env is sourced
+source .env
 
 # Deploy
 forge script script/DeployFuji.s.sol --rpc-url $FUJI_RPC_URL --broadcast -vvvv
+
+# With verification
+forge script script/DeployFuji.s.sol --rpc-url $FUJI_RPC_URL --broadcast --verify -vvvv
 ```
 
-## Development
+## Current Deployments
 
-```bash
-# Run tests with gas report
-forge test --gas-report
+### Avalanche Fuji Testnet
 
-# Run specific test
-forge test --match-test testFunctionName
+| Contract | Address |
+|----------|---------|
+| AgreementFactoryV3 | See papre-app `src/lib/contracts.ts` |
+| FreelanceServiceAgreement | See papre-app `src/lib/contracts.ts` |
+| MilestonePaymentAgreement | See papre-app `src/lib/contracts.ts` |
+| RetainerAgreement | See papre-app `src/lib/contracts.ts` |
 
-# Coverage
-forge coverage
-```
+## Troubleshooting
+
+### "Stack too deep" errors
+The project uses `via_ir = true` in `foundry.toml` which should prevent this. If you still see issues, ensure you're using Solidity 0.8.28+.
+
+### Chainlink import errors
+Make sure you ran `npm install` for the Chainlink CCIP dependencies.
+
+### OpenZeppelin import errors
+Make sure you ran `forge install` for the Foundry dependencies.
 
 ## License
 
