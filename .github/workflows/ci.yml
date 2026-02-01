@@ -15,9 +15,6 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  FOUNDRY_PROFILE: ci
-
 jobs:
   build:
     name: Build Contracts
