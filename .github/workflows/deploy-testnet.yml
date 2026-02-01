@@ -80,7 +80,7 @@ jobs:
 
       - name: Upload deployment artifacts
         if: ${{ !inputs.dry_run }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: deployment-${{ inputs.network }}-${{ github.sha }}
           path: broadcast/
