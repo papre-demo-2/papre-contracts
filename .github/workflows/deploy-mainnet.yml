@@ -46,7 +46,7 @@ jobs:
         run: FOUNDRY_PROFILE=ci forge test -vvv
 
       - name: Run Slither
-        uses: crytic/slither-action@v0.4.0
+        uses: crytic/slither-action@v0.4.2
         with:
           target: '.'
           slither-args: --filter-paths "lib|test|script" --exclude-informational
