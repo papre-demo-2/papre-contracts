@@ -21,11 +21,11 @@ contract ArbitrationClauseLogicV3Test is Test {
     bytes32 public rulingHash = keccak256("ruling-justification");
 
     // State constants
-    uint16 constant STANDBY = 1 << 1;         // 0x0002
-    uint16 constant FILED = 1 << 4;           // 0x0010
+    uint16 constant STANDBY = 1 << 1; // 0x0002
+    uint16 constant FILED = 1 << 4; // 0x0010
     uint16 constant AWAITING_RULING = 1 << 5; // 0x0020
-    uint16 constant RULED = 1 << 6;           // 0x0040
-    uint16 constant EXECUTED = 1 << 2;        // 0x0004
+    uint16 constant RULED = 1 << 6; // 0x0040
+    uint16 constant EXECUTED = 1 << 2; // 0x0004
 
     function setUp() public {
         arbitration = new ArbitrationClauseLogicV3();
@@ -263,9 +263,7 @@ contract ArbitrationClauseLogicV3Test is Test {
         vm.prank(claimant);
         vm.expectRevert(
             abi.encodeWithSelector(
-                ArbitrationClauseLogicV3.EvidenceWindowExpired.selector,
-                deadline,
-                uint64(block.timestamp)
+                ArbitrationClauseLogicV3.EvidenceWindowExpired.selector, deadline, uint64(block.timestamp)
             )
         );
         arbitration.actionSubmitEvidence(instanceId, evidenceHash1);
@@ -362,9 +360,7 @@ contract ArbitrationClauseLogicV3Test is Test {
         _setupAndAwaitRuling();
 
         vm.prank(randomUser);
-        vm.expectRevert(
-            abi.encodeWithSelector(ArbitrationClauseLogicV3.NotArbitrator.selector, randomUser, arbitrator)
-        );
+        vm.expectRevert(abi.encodeWithSelector(ArbitrationClauseLogicV3.NotArbitrator.selector, randomUser, arbitrator));
         arbitration.actionRule(instanceId, ArbitrationClauseLogicV3.Ruling.CLAIMANT_WINS, rulingHash, 0);
     }
 
@@ -389,9 +385,7 @@ contract ArbitrationClauseLogicV3Test is Test {
         // Still in FILED state, deadline not passed
 
         vm.prank(arbitrator);
-        vm.expectRevert(
-            abi.encodeWithSelector(ArbitrationClauseLogicV3.WrongState.selector, AWAITING_RULING, FILED)
-        );
+        vm.expectRevert(abi.encodeWithSelector(ArbitrationClauseLogicV3.WrongState.selector, AWAITING_RULING, FILED));
         arbitration.actionRule(instanceId, ArbitrationClauseLogicV3.Ruling.CLAIMANT_WINS, rulingHash, 0);
     }
 
@@ -591,12 +585,7 @@ contract ArbitrationClauseLogicV3Test is Test {
         _setupAndReady();
 
         vm.expectEmit(true, true, false, true);
-        emit ArbitrationClauseLogicV3.ClaimFiled(
-            instanceId,
-            claimant,
-            claimHash,
-            uint64(block.timestamp + 7 days)
-        );
+        emit ArbitrationClauseLogicV3.ClaimFiled(instanceId, claimant, claimHash, uint64(block.timestamp + 7 days));
 
         vm.prank(claimant);
         arbitration.actionFileClaim(instanceId, claimHash);
@@ -606,12 +595,7 @@ contract ArbitrationClauseLogicV3Test is Test {
         _setupAndFile();
 
         vm.expectEmit(true, true, false, true);
-        emit ArbitrationClauseLogicV3.EvidenceSubmitted(
-            instanceId,
-            claimant,
-            evidenceHash1,
-            0
-        );
+        emit ArbitrationClauseLogicV3.EvidenceSubmitted(instanceId, claimant, evidenceHash1, 0);
 
         vm.prank(claimant);
         arbitration.actionSubmitEvidence(instanceId, evidenceHash1);
@@ -638,11 +622,7 @@ contract ArbitrationClauseLogicV3Test is Test {
 
         vm.expectEmit(true, true, false, true);
         emit ArbitrationClauseLogicV3.RulingIssued(
-            instanceId,
-            arbitrator,
-            ArbitrationClauseLogicV3.Ruling.CLAIMANT_WINS,
-            rulingHash,
-            0
+            instanceId, arbitrator, ArbitrationClauseLogicV3.Ruling.CLAIMANT_WINS, rulingHash, 0
         );
 
         vm.prank(arbitrator);
@@ -815,9 +795,7 @@ contract ArbitrationClauseLogicV3Test is Test {
         vm.prank(claimant);
         vm.expectRevert(
             abi.encodeWithSelector(
-                ArbitrationClauseLogicV3.EvidenceWindowExpired.selector,
-                deadline,
-                uint64(block.timestamp)
+                ArbitrationClauseLogicV3.EvidenceWindowExpired.selector, deadline, uint64(block.timestamp)
             )
         );
         arbitration.actionSubmitEvidence(instanceId, evidenceHash1);
@@ -979,11 +957,7 @@ contract ArbitrationInvariantTest is Test {
     function invariant_validStatus() public view {
         uint16 status = arbitration.queryStatus(instanceId);
         assertTrue(
-            status == STANDBY ||
-            status == FILED ||
-            status == AWAITING_RULING ||
-            status == RULED ||
-            status == EXECUTED,
+            status == STANDBY || status == FILED || status == AWAITING_RULING || status == RULED || status == EXECUTED,
             "Invalid status"
         );
     }

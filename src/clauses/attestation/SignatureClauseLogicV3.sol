@@ -34,10 +34,7 @@ contract SignatureClauseLogicV3 is ClauseBase {
     // =============================================================
 
     event SignerSlotClaimed(
-        bytes32 indexed instanceId,
-        uint256 indexed slotIndex,
-        address indexed claimer,
-        address attestor
+        bytes32 indexed instanceId, uint256 indexed slotIndex, address indexed claimer, address attestor
     );
     event TrustedAttestorSet(address indexed attestor, bool trusted);
 
@@ -59,11 +56,12 @@ contract SignatureClauseLogicV3 is ClauseBase {
         mapping(bytes32 => uint256[]) pendingSlotIndices;
         /// @notice Trusted attestor addresses that can authorize slot claims
         mapping(address => bool) trustedAttestors;
+        /// @notice instanceId => signer => timestamp when they signed (immutable once set)
+        mapping(bytes32 => mapping(address => uint256)) signatureTimes;
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.clause.signature.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant STORAGE_SLOT =
-        0xb9275fdc74765a832627ae6dd03da7014a07edb33b727516e7623706fd582300;
+    bytes32 private constant STORAGE_SLOT = 0xb9275fdc74765a832627ae6dd03da7014a07edb33b727516e7623706fd582300;
 
     function _getStorage() internal pure returns (SignatureStorage storage $) {
         assembly {
@@ -118,6 +116,7 @@ contract SignatureClauseLogicV3 is ClauseBase {
         require($.status[instanceId] == PENDING, "Wrong state");
 
         $.signatures[instanceId][msg.sender] = signature;
+        $.signatureTimes[instanceId][msg.sender] = block.timestamp;
         if (_allSigned($, instanceId)) {
             $.status[instanceId] = COMPLETE;
         }
@@ -139,12 +138,9 @@ contract SignatureClauseLogicV3 is ClauseBase {
     /// @param slotIndex Index in the signers array to claim
     /// @param claimer Address claiming the slot
     /// @param attestation ECDSA signature from trusted attestor
-    function actionClaimSignerSlot(
-        bytes32 instanceId,
-        uint256 slotIndex,
-        address claimer,
-        bytes calldata attestation
-    ) external {
+    function actionClaimSignerSlot(bytes32 instanceId, uint256 slotIndex, address claimer, bytes calldata attestation)
+        external
+    {
         SignatureStorage storage $ = _getStorage();
 
         // Validate slot is pending (address(0))
@@ -167,7 +163,7 @@ contract SignatureClauseLogicV3 is ClauseBase {
         // keccak256(abi.encode(agreement, instanceId, slotIndex, claimer, "CLAIM_SIGNER_SLOT"))
         bytes32 messageHash = keccak256(
             abi.encode(
-                address(this),  // agreement
+                address(this), // agreement
                 instanceId,
                 slotIndex,
                 claimer,
@@ -273,6 +269,14 @@ contract SignatureClauseLogicV3 is ClauseBase {
         return _getStorage().trustedAttestors[attestor];
     }
 
+    /// @notice Get the timestamp when a signer signed
+    /// @param instanceId Unique identifier for this signing instance
+    /// @param signer Address to check
+    /// @return Unix timestamp when the signer signed (0 if not signed)
+    function querySignatureTime(bytes32 instanceId, address signer) external view returns (uint256) {
+        return _getStorage().signatureTimes[instanceId][signer];
+    }
+
     // =============================================================
     // INTERNAL
     // =============================================================
@@ -290,11 +294,7 @@ contract SignatureClauseLogicV3 is ClauseBase {
     }
 
     /// @notice Remove a slot index from the pending slots array
-    function _removePendingSlot(
-        SignatureStorage storage $,
-        bytes32 instanceId,
-        uint256 slotIndex
-    ) private {
+    function _removePendingSlot(SignatureStorage storage $, bytes32 instanceId, uint256 slotIndex) private {
         uint256[] storage pending = $.pendingSlotIndices[instanceId];
         for (uint256 i = 0; i < pending.length; i++) {
             if (pending[i] == slotIndex) {

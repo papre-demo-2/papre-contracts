@@ -25,8 +25,7 @@ contract MockDeadlineAgreement {
     ) external {
         (bool success, bytes memory data) = address(deadlineClause).delegatecall(
             abi.encodeCall(
-                DeadlineClauseLogicV3.intakeSetDeadline,
-                (targetInstanceId, targetIndex, deadline, action, controller)
+                DeadlineClauseLogicV3.intakeSetDeadline, (targetInstanceId, targetIndex, deadline, action, controller)
             )
         );
         if (!success) revert DelegatecallFailed(data);
@@ -40,162 +39,98 @@ contract MockDeadlineAgreement {
     ) external {
         (bool success, bytes memory data) = address(deadlineClause).delegatecall(
             abi.encodeCall(
-                DeadlineClauseLogicV3.intakeModifyDeadline,
-                (targetInstanceId, targetIndex, newDeadline, newAction)
+                DeadlineClauseLogicV3.intakeModifyDeadline, (targetInstanceId, targetIndex, newDeadline, newAction)
             )
         );
         if (!success) revert DelegatecallFailed(data);
     }
 
-    function deadline_intakeClearDeadline(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external {
+    function deadline_intakeClearDeadline(bytes32 targetInstanceId, uint256 targetIndex) external {
         (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(
-                DeadlineClauseLogicV3.intakeClearDeadline,
-                (targetInstanceId, targetIndex)
-            )
+            abi.encodeCall(DeadlineClauseLogicV3.intakeClearDeadline, (targetInstanceId, targetIndex))
         );
         if (!success) revert DelegatecallFailed(data);
     }
 
     // Action functions
-    function deadline_actionMarkEnforced(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external {
+    function deadline_actionMarkEnforced(bytes32 targetInstanceId, uint256 targetIndex) external {
         (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(
-                DeadlineClauseLogicV3.actionMarkEnforced,
-                (targetInstanceId, targetIndex)
-            )
+            abi.encodeCall(DeadlineClauseLogicV3.actionMarkEnforced, (targetInstanceId, targetIndex))
         );
         if (!success) revert DelegatecallFailed(data);
     }
 
     // Query functions
-    function deadline_queryDeadline(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external returns (uint256 deadline, uint8 action, bool enforced, address controller) {
+    function deadline_queryDeadline(bytes32 targetInstanceId, uint256 targetIndex)
+        external
+        returns (uint256 deadline, uint8 action, bool enforced, address controller)
+    {
         (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(
-                DeadlineClauseLogicV3.queryDeadline,
-                (targetInstanceId, targetIndex)
-            )
+            abi.encodeCall(DeadlineClauseLogicV3.queryDeadline, (targetInstanceId, targetIndex))
         );
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (uint256, uint8, bool, address));
     }
 
-    function deadline_queryController(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external returns (address) {
+    function deadline_queryController(bytes32 targetInstanceId, uint256 targetIndex) external returns (address) {
         (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(
-                DeadlineClauseLogicV3.queryController,
-                (targetInstanceId, targetIndex)
-            )
+            abi.encodeCall(DeadlineClauseLogicV3.queryController, (targetInstanceId, targetIndex))
         );
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (address));
     }
 
-    function deadline_queryIsImmutable(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external returns (bool) {
+    function deadline_queryIsImmutable(bytes32 targetInstanceId, uint256 targetIndex) external returns (bool) {
         (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(
-                DeadlineClauseLogicV3.queryIsImmutable,
-                (targetInstanceId, targetIndex)
-            )
+            abi.encodeCall(DeadlineClauseLogicV3.queryIsImmutable, (targetInstanceId, targetIndex))
         );
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (bool));
     }
 
-    function deadline_queryIsSet(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external returns (bool) {
+    function deadline_queryIsSet(bytes32 targetInstanceId, uint256 targetIndex) external returns (bool) {
         (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(
-                DeadlineClauseLogicV3.queryIsSet,
-                (targetInstanceId, targetIndex)
-            )
+            abi.encodeCall(DeadlineClauseLogicV3.queryIsSet, (targetInstanceId, targetIndex))
         );
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (bool));
     }
 
-    function deadline_queryIsExpired(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external returns (bool) {
+    function deadline_queryIsExpired(bytes32 targetInstanceId, uint256 targetIndex) external returns (bool) {
         (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(
-                DeadlineClauseLogicV3.queryIsExpired,
-                (targetInstanceId, targetIndex)
-            )
+            abi.encodeCall(DeadlineClauseLogicV3.queryIsExpired, (targetInstanceId, targetIndex))
         );
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (bool));
     }
 
-    function deadline_queryIsEnforced(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external returns (bool) {
+    function deadline_queryIsEnforced(bytes32 targetInstanceId, uint256 targetIndex) external returns (bool) {
         (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(
-                DeadlineClauseLogicV3.queryIsEnforced,
-                (targetInstanceId, targetIndex)
-            )
+            abi.encodeCall(DeadlineClauseLogicV3.queryIsEnforced, (targetInstanceId, targetIndex))
         );
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (bool));
     }
 
-    function deadline_queryCanEnforce(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external returns (bool) {
+    function deadline_queryCanEnforce(bytes32 targetInstanceId, uint256 targetIndex) external returns (bool) {
         (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(
-                DeadlineClauseLogicV3.queryCanEnforce,
-                (targetInstanceId, targetIndex)
-            )
+            abi.encodeCall(DeadlineClauseLogicV3.queryCanEnforce, (targetInstanceId, targetIndex))
         );
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (bool));
     }
 
-    function deadline_queryAction(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external returns (uint8) {
+    function deadline_queryAction(bytes32 targetInstanceId, uint256 targetIndex) external returns (uint8) {
         (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(
-                DeadlineClauseLogicV3.queryAction,
-                (targetInstanceId, targetIndex)
-            )
+            abi.encodeCall(DeadlineClauseLogicV3.queryAction, (targetInstanceId, targetIndex))
         );
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (uint8));
     }
 
-    function deadline_queryTimeRemaining(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external returns (uint256) {
+    function deadline_queryTimeRemaining(bytes32 targetInstanceId, uint256 targetIndex) external returns (uint256) {
         (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(
-                DeadlineClauseLogicV3.queryTimeRemaining,
-                (targetInstanceId, targetIndex)
-            )
+            abi.encodeCall(DeadlineClauseLogicV3.queryTimeRemaining, (targetInstanceId, targetIndex))
         );
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (uint256));
@@ -408,7 +343,9 @@ contract DeadlineClauseLogicV3Test is Test {
     }
 
     function test_QueryIsSet_Set() public {
-        agreement.deadline_intakeSetDeadline(INSTANCE_ID, INDEX_0, block.timestamp + 1 hours, ACTION_RELEASE, address(0));
+        agreement.deadline_intakeSetDeadline(
+            INSTANCE_ID, INDEX_0, block.timestamp + 1 hours, ACTION_RELEASE, address(0)
+        );
         assertTrue(agreement.deadline_queryIsSet(INSTANCE_ID, INDEX_0));
     }
 
@@ -417,7 +354,9 @@ contract DeadlineClauseLogicV3Test is Test {
     }
 
     function test_QueryIsExpired_NotYetExpired() public {
-        agreement.deadline_intakeSetDeadline(INSTANCE_ID, INDEX_0, block.timestamp + 1 hours, ACTION_RELEASE, address(0));
+        agreement.deadline_intakeSetDeadline(
+            INSTANCE_ID, INDEX_0, block.timestamp + 1 hours, ACTION_RELEASE, address(0)
+        );
         assertFalse(agreement.deadline_queryIsExpired(INSTANCE_ID, INDEX_0));
     }
 

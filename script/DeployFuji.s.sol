@@ -52,7 +52,6 @@ import {AgreementFactoryV3} from "../src/factories/AgreementFactoryV3.sol";
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 contract DeployFuji is Script {
-
     // Deployed clause addresses
     SignatureClauseLogicV3 public signatureClause;
     EscrowClauseLogicV3 public escrowClause;
@@ -140,17 +139,11 @@ contract DeployFuji is Script {
         console2.log(unicode"│                      2. DEPLOYING ADAPTERS                      │");
         console2.log(unicode"└─────────────────────────────────────────────────────────────────┘");
 
-        milestoneAdapter = new MilestoneEscrowAdapter(
-            address(milestoneClause),
-            address(escrowClause)
-        );
+        milestoneAdapter = new MilestoneEscrowAdapter(address(milestoneClause), address(escrowClause));
         console2.log("MilestoneEscrowAdapter:", address(milestoneAdapter));
 
-        deadlineAdapter = new DeadlineEnforcementAdapter(
-            address(deadlineClause),
-            address(milestoneClause),
-            address(escrowClause)
-        );
+        deadlineAdapter =
+            new DeadlineEnforcementAdapter(address(deadlineClause), address(milestoneClause), address(escrowClause));
         console2.log("DeadlineEnforcementAdapter:", address(deadlineAdapter));
 
         console2.log("");
@@ -163,31 +156,20 @@ contract DeployFuji is Script {
         console2.log(unicode"│               3. DEPLOYING AGREEMENT IMPLEMENTATIONS            │");
         console2.log(unicode"└─────────────────────────────────────────────────────────────────┘");
 
-        freelanceServiceImpl = new FreelanceServiceAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(declarativeClause)
-        );
+        freelanceServiceImpl =
+            new FreelanceServiceAgreement(address(signatureClause), address(escrowClause), address(declarativeClause));
         console2.log("FreelanceServiceAgreement:", address(freelanceServiceImpl));
 
-        retainerImpl = new RetainerAgreement(
-            address(signatureClause),
-            address(escrowClause)
-        );
+        retainerImpl = new RetainerAgreement(address(signatureClause), address(escrowClause));
         console2.log("RetainerAgreement:", address(retainerImpl));
 
         safetyNetImpl = new SubcontractorSafetyNetAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(arbitrationClause)
+            address(signatureClause), address(escrowClause), address(arbitrationClause)
         );
         console2.log("SubcontractorSafetyNetAgreement:", address(safetyNetImpl));
 
         milestonePaymentImpl = new MilestonePaymentAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(milestoneClause),
-            address(milestoneAdapter)
+            address(signatureClause), address(escrowClause), address(milestoneClause), address(milestoneAdapter)
         );
         console2.log("MilestonePaymentAgreement:", address(milestonePaymentImpl));
 

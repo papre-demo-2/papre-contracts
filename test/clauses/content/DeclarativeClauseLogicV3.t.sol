@@ -7,7 +7,6 @@ import {DeclarativeClauseLogicV3} from "../../../src/clauses/content/Declarative
 /// @title DeclarativeClauseLogicV3 Unit Tests
 /// @notice Tests for the v3 self-describing content anchoring clause with ERC-7201 storage
 contract DeclarativeClauseLogicV3Test is Test {
-
     DeclarativeClauseLogicV3 public clause;
 
     // Test accounts
@@ -20,9 +19,9 @@ contract DeclarativeClauseLogicV3Test is Test {
     bytes32 constant INSTANCE_2 = bytes32(uint256(2));
 
     // State constants (matching the contract)
-    uint16 constant REGISTERED = 1 << 1;  // 0x0002
-    uint16 constant SEALED     = 1 << 2;  // 0x0004
-    uint16 constant REVOKED    = 1 << 3;  // 0x0008
+    uint16 constant REGISTERED = 1 << 1; // 0x0002
+    uint16 constant SEALED = 1 << 2; // 0x0004
+    uint16 constant REVOKED = 1 << 3; // 0x0008
 
     // Test content
     bytes32 constant CONTENT_HASH = keccak256("test-content");
@@ -614,7 +613,8 @@ contract DeclarativeClauseLogicV3Test is Test {
 
     function test_LongUri() public {
         // Very long URI (within gas limits)
-        string memory longUri = "ipfs://QmLongHash1234567890abcdefghijklmnopqrstuvwxyzLongHash1234567890abcdefghijklmnopqrstuvwxyzLongHash1234567890abcdefghijklmnopqrstuvwxyz";
+        string memory longUri =
+            "ipfs://QmLongHash1234567890abcdefghijklmnopqrstuvwxyzLongHash1234567890abcdefghijklmnopqrstuvwxyzLongHash1234567890abcdefghijklmnopqrstuvwxyz";
 
         vm.prank(alice);
         clause.intakeContent(INSTANCE_1, CONTENT_HASH, longUri);

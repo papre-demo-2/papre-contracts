@@ -36,11 +36,7 @@ contract MilestonePaymentAgreementTest is Test {
     address contractor;
 
     // Events (must match contract)
-    event InstanceCreated(
-        uint256 indexed instanceId,
-        address indexed client,
-        address indexed contractor
-    );
+    event InstanceCreated(uint256 indexed instanceId, address indexed client, address indexed contractor);
     event ProjectConfigured(
         uint256 indexed instanceId,
         address indexed client,
@@ -62,17 +58,11 @@ contract MilestonePaymentAgreementTest is Test {
         signatureClause = new SignatureClauseLogicV3();
         escrowClause = new EscrowClauseLogicV3();
         milestoneClause = new MilestoneClauseLogicV3();
-        milestoneAdapter = new MilestoneEscrowAdapter(
-            address(milestoneClause),
-            address(escrowClause)
-        );
+        milestoneAdapter = new MilestoneEscrowAdapter(address(milestoneClause), address(escrowClause));
 
         // Deploy implementation
         implementation = new MilestonePaymentAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(milestoneClause),
-            address(milestoneAdapter)
+            address(signatureClause), address(escrowClause), address(milestoneClause), address(milestoneAdapter)
         );
 
         // Create accounts
@@ -105,21 +95,11 @@ contract MilestonePaymentAgreementTest is Test {
         deadlines[1] = block.timestamp + 6 weeks;
         deadlines[2] = block.timestamp + 8 weeks;
 
-        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(
-            payable(Clones.clone(address(implementation)))
-        );
+        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
 
         bytes32 documentCID = keccak256("test-document-cid");
 
-        agreement.initialize(
-            client,
-            contractor,
-            address(0),
-            descriptions,
-            amounts,
-            deadlines,
-            documentCID
-        );
+        agreement.initialize(client, contractor, address(0), descriptions, amounts, deadlines, documentCID);
 
         return agreement;
     }
@@ -202,48 +182,26 @@ contract MilestonePaymentAgreementTest is Test {
         uint256[] memory deadlines = new uint256[](1);
         deadlines[0] = block.timestamp + 1 weeks;
 
-        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(
-            payable(Clones.clone(address(implementation)))
-        );
+        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
 
-        agreement.initialize(
-            client,
-            contractor,
-            address(0),
-            descriptions,
-            amounts,
-            deadlines,
-            testCID
-        );
+        agreement.initialize(client, contractor, address(0), descriptions, amounts, deadlines, testCID);
 
         assertEq(agreement.getDocumentCID(0), testCID);
     }
 
     function test_Initialize_RevertsOnZeroMilestones() public {
-        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(
-            payable(Clones.clone(address(implementation)))
-        );
+        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
 
         bytes32[] memory descriptions = new bytes32[](0);
         uint256[] memory amounts = new uint256[](0);
         uint256[] memory deadlines = new uint256[](0);
 
         vm.expectRevert(MilestonePaymentAgreement.TooManyMilestones.selector);
-        agreement.initialize(
-            client,
-            contractor,
-            address(0),
-            descriptions,
-            amounts,
-            deadlines,
-            bytes32(0)
-        );
+        agreement.initialize(client, contractor, address(0), descriptions, amounts, deadlines, bytes32(0));
     }
 
     function test_Initialize_RevertsOnTooManyMilestones() public {
-        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(
-            payable(Clones.clone(address(implementation)))
-        );
+        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
 
         bytes32[] memory descriptions = new bytes32[](11);
         uint256[] memory amounts = new uint256[](11);
@@ -256,36 +214,18 @@ contract MilestonePaymentAgreementTest is Test {
         }
 
         vm.expectRevert(MilestonePaymentAgreement.TooManyMilestones.selector);
-        agreement.initialize(
-            client,
-            contractor,
-            address(0),
-            descriptions,
-            amounts,
-            deadlines,
-            bytes32(0)
-        );
+        agreement.initialize(client, contractor, address(0), descriptions, amounts, deadlines, bytes32(0));
     }
 
     function test_Initialize_RevertsOnMismatchedArrays() public {
-        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(
-            payable(Clones.clone(address(implementation)))
-        );
+        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
 
         bytes32[] memory descriptions = new bytes32[](3);
         uint256[] memory amounts = new uint256[](2); // Mismatched
         uint256[] memory deadlines = new uint256[](3);
 
         vm.expectRevert(MilestonePaymentAgreement.InvalidMilestoneConfig.selector);
-        agreement.initialize(
-            client,
-            contractor,
-            address(0),
-            descriptions,
-            amounts,
-            deadlines,
-            bytes32(0)
-        );
+        agreement.initialize(client, contractor, address(0), descriptions, amounts, deadlines, bytes32(0));
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -304,7 +244,7 @@ contract MilestonePaymentAgreementTest is Test {
         vm.prank(client);
         agreement.fundProject{value: 25 ether}(0);
 
-        (,bool funded,,) = agreement.getProjectState();
+        (, bool funded,,) = agreement.getProjectState();
         assertTrue(funded);
     }
 
@@ -501,7 +441,7 @@ contract MilestonePaymentAgreementTest is Test {
         project1.approveMilestone(0, 0);
 
         // Project2 should be unaffected
-        (bool termsAccepted,,, ) = project2.getProjectState();
+        (bool termsAccepted,,,) = project2.getProjectState();
         assertFalse(termsAccepted);
         assertEq(project2.getCompletedMilestones(), 0);
     }
@@ -529,18 +469,10 @@ contract MilestonePaymentAgreementTest is Test {
         uint256[] memory deadlines = new uint256[](1);
         deadlines[0] = block.timestamp + 4 weeks;
 
-        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(
-            payable(Clones.clone(address(implementation)))
-        );
+        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
 
         agreement.initialize(
-            client,
-            contractor,
-            address(0),
-            descriptions,
-            amounts,
-            deadlines,
-            keccak256("single-milestone-doc")
+            client, contractor, address(0), descriptions, amounts, deadlines, keccak256("single-milestone-doc")
         );
 
         // Sign and fund
@@ -602,19 +534,13 @@ contract MilestonePaymentAgreementTest is Test {
         return (implementation, instanceId);
     }
 
-    function _createClaimAttestation(
-        address agreement,
-        bytes32 termsSignatureId,
-        uint256 slotIndex,
-        address claimer
-    ) internal pure returns (bytes memory) {
-        bytes32 messageHash = keccak256(abi.encode(
-            agreement,
-            termsSignatureId,
-            slotIndex,
-            claimer,
-            "CLAIM_SIGNER_SLOT"
-        ));
+    function _createClaimAttestation(address agreement, bytes32 termsSignatureId, uint256 slotIndex, address claimer)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        bytes32 messageHash =
+            keccak256(abi.encode(agreement, termsSignatureId, slotIndex, claimer, "CLAIM_SIGNER_SLOT"));
         bytes32 ethSignedHash = messageHash.toEthSignedMessageHash();
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(ATTESTOR_PK, ethSignedHash);
         return abi.encodePacked(r, s, v);
@@ -623,16 +549,8 @@ contract MilestonePaymentAgreementTest is Test {
     function test_CreateInstance_WithPendingContractor() public {
         (MilestonePaymentAgreement agreement, uint256 instanceId) = _createProjectWithPendingContractor();
 
-        (
-            ,
-            ,
-            ,
-            address instanceClient,
-            address instanceContractor,
-            ,
-            uint256 totalAmount,
-            uint8 milestoneCount
-        ) = agreement.getInstance(instanceId);
+        (,,, address instanceClient, address instanceContractor,, uint256 totalAmount, uint8 milestoneCount) =
+            agreement.getInstance(instanceId);
 
         assertEq(instanceClient, client);
         assertEq(instanceContractor, address(0)); // Pending
@@ -737,12 +655,7 @@ contract MilestonePaymentAgreementTest is Test {
         bytes32 termsSignatureId = keccak256(abi.encode(address(implementation), instanceId, "terms"));
 
         // Contractor claims slot
-        bytes memory attestation = _createClaimAttestation(
-            address(implementation),
-            termsSignatureId,
-            1,
-            contractor
-        );
+        bytes memory attestation = _createClaimAttestation(address(implementation), termsSignatureId, 1, contractor);
 
         vm.prank(contractor);
         implementation.claimContractorSlot(instanceId, attestation);
@@ -803,15 +716,9 @@ contract MilestonePaymentAgreementFuzzTest is Test {
         signatureClause = new SignatureClauseLogicV3();
         escrowClause = new EscrowClauseLogicV3();
         milestoneClause = new MilestoneClauseLogicV3();
-        milestoneAdapter = new MilestoneEscrowAdapter(
-            address(milestoneClause),
-            address(escrowClause)
-        );
+        milestoneAdapter = new MilestoneEscrowAdapter(address(milestoneClause), address(escrowClause));
         implementation = new MilestonePaymentAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(milestoneClause),
-            address(milestoneAdapter)
+            address(signatureClause), address(escrowClause), address(milestoneClause), address(milestoneAdapter)
         );
     }
 
@@ -838,18 +745,10 @@ contract MilestonePaymentAgreementFuzzTest is Test {
         vm.deal(client, totalAmount + 10 ether);
         vm.deal(contractor, 1 ether);
 
-        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(
-            payable(Clones.clone(address(implementation)))
-        );
+        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
 
         agreement.initialize(
-            client,
-            contractor,
-            address(0),
-            descriptions,
-            amounts,
-            deadlines,
-            keccak256(abi.encode("fuzz-doc", count))
+            client, contractor, address(0), descriptions, amounts, deadlines, keccak256(abi.encode("fuzz-doc", count))
         );
 
         assertEq(agreement.getMilestoneCount(), count);
@@ -885,9 +784,7 @@ contract MilestonePaymentAgreementFuzzTest is Test {
         deadlines[1] = block.timestamp + 2 weeks;
         deadlines[2] = block.timestamp + 3 weeks;
 
-        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(
-            payable(Clones.clone(address(implementation)))
-        );
+        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
 
         agreement.initialize(
             client,
@@ -934,15 +831,9 @@ contract MilestonePaymentAgreementInvariantTest is Test {
         signatureClause = new SignatureClauseLogicV3();
         escrowClause = new EscrowClauseLogicV3();
         milestoneClause = new MilestoneClauseLogicV3();
-        milestoneAdapter = new MilestoneEscrowAdapter(
-            address(milestoneClause),
-            address(escrowClause)
-        );
+        milestoneAdapter = new MilestoneEscrowAdapter(address(milestoneClause), address(escrowClause));
         implementation = new MilestonePaymentAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(milestoneClause),
-            address(milestoneAdapter)
+            address(signatureClause), address(escrowClause), address(milestoneClause), address(milestoneAdapter)
         );
 
         handler = new MilestonePaymentHandler(implementation);
@@ -1019,18 +910,10 @@ contract MilestonePaymentHandler is Test {
         vm.deal(client, totalAmount + 10 ether);
         vm.deal(contractor, 1 ether);
 
-        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(
-            payable(Clones.clone(address(implementation)))
-        );
+        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
 
         agreement.initialize(
-            client,
-            contractor,
-            address(0),
-            descriptions,
-            amounts,
-            deadlines,
-            keccak256(abi.encode("handler-doc", seed))
+            client, contractor, address(0), descriptions, amounts, deadlines, keccak256(abi.encode("handler-doc", seed))
         );
 
         agreements.push(agreement);

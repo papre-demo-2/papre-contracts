@@ -93,25 +93,14 @@ contract DeadlineClauseLogicV3 is ClauseBase {
 
     /// @notice Emitted when a deadline is modified
     event DeadlineModified(
-        bytes32 indexed targetInstanceId,
-        uint256 indexed targetIndex,
-        uint256 deadline,
-        uint8 action,
-        address modifier_
+        bytes32 indexed targetInstanceId, uint256 indexed targetIndex, uint256 deadline, uint8 action, address modifier_
     );
 
     /// @notice Emitted when a deadline is marked as enforced
-    event DeadlineEnforced(
-        bytes32 indexed targetInstanceId,
-        uint256 indexed targetIndex,
-        uint8 action
-    );
+    event DeadlineEnforced(bytes32 indexed targetInstanceId, uint256 indexed targetIndex, uint8 action);
 
     /// @notice Emitted when a deadline is cleared (before enforcement)
-    event DeadlineCleared(
-        bytes32 indexed targetInstanceId,
-        uint256 indexed targetIndex
-    );
+    event DeadlineCleared(bytes32 indexed targetInstanceId, uint256 indexed targetIndex);
 
     // =============================================================
     // STRUCTS
@@ -119,9 +108,9 @@ contract DeadlineClauseLogicV3 is ClauseBase {
 
     /// @notice Configuration for a single deadline
     struct DeadlineConfig {
-        uint256 deadline;   // Unix timestamp (0 = not set)
-        uint8 action;       // ACTION_RELEASE or ACTION_REFUND
-        bool enforced;      // Has this deadline been enforced?
+        uint256 deadline; // Unix timestamp (0 = not set)
+        uint8 action; // ACTION_RELEASE or ACTION_REFUND
+        bool enforced; // Has this deadline been enforced?
         address controller; // Who can modify (address(0) = immutable after set)
     }
 
@@ -137,8 +126,7 @@ contract DeadlineClauseLogicV3 is ClauseBase {
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.clause.deadline.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant STORAGE_SLOT =
-        0x16ee529f32ee135eb9b99f509138cc2138f9b8bf166ce61d75f9664dfe6bc600;
+    bytes32 private constant STORAGE_SLOT = 0x16ee529f32ee135eb9b99f509138cc2138f9b8bf166ce61d75f9664dfe6bc600;
 
     function _getStorage() internal pure returns (DeadlineStorage storage $) {
         assembly {
@@ -192,12 +180,9 @@ contract DeadlineClauseLogicV3 is ClauseBase {
     /// @param newAction New action (ACTION_RELEASE or ACTION_REFUND)
     /// @dev Only callable by the controller set during intakeSetDeadline.
     ///      If controller is address(0), deadline is immutable and cannot be modified.
-    function intakeModifyDeadline(
-        bytes32 targetInstanceId,
-        uint256 targetIndex,
-        uint256 newDeadline,
-        uint8 newAction
-    ) external {
+    function intakeModifyDeadline(bytes32 targetInstanceId, uint256 targetIndex, uint256 newDeadline, uint8 newAction)
+        external
+    {
         if (newDeadline == 0) revert InvalidDeadline(newDeadline);
         if (newDeadline <= block.timestamp) revert DeadlineInPast(newDeadline, block.timestamp);
         if (newAction != ACTION_RELEASE && newAction != ACTION_REFUND) revert InvalidAction(newAction);
@@ -220,10 +205,7 @@ contract DeadlineClauseLogicV3 is ClauseBase {
     /// @param targetInstanceId The instance ID of the target
     /// @param targetIndex The index within the target
     /// @dev Only callable by the controller. Immutable deadlines cannot be cleared.
-    function intakeClearDeadline(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external {
+    function intakeClearDeadline(bytes32 targetInstanceId, uint256 targetIndex) external {
         DeadlineStorage storage $ = _getStorage();
         DeadlineConfig storage config = $.deadlines[targetInstanceId][targetIndex];
 
@@ -248,10 +230,7 @@ contract DeadlineClauseLogicV3 is ClauseBase {
     /// @param targetIndex The index within the target
     /// @dev Called by adapter after successfully executing the deadline action
     ///      Caller is responsible for verifying deadline is expired before calling
-    function actionMarkEnforced(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external {
+    function actionMarkEnforced(bytes32 targetInstanceId, uint256 targetIndex) external {
         DeadlineStorage storage $ = _getStorage();
         DeadlineConfig storage config = $.deadlines[targetInstanceId][targetIndex];
 
@@ -277,10 +256,11 @@ contract DeadlineClauseLogicV3 is ClauseBase {
     /// @return action ACTION_RELEASE, ACTION_REFUND, or ACTION_NONE
     /// @return enforced Whether the deadline has been enforced
     /// @return controller Who can modify (address(0) = immutable)
-    function queryDeadline(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external view returns (uint256 deadline, uint8 action, bool enforced, address controller) {
+    function queryDeadline(bytes32 targetInstanceId, uint256 targetIndex)
+        external
+        view
+        returns (uint256 deadline, uint8 action, bool enforced, address controller)
+    {
         DeadlineStorage storage $ = _getStorage();
         DeadlineConfig storage config = $.deadlines[targetInstanceId][targetIndex];
         return (config.deadline, config.action, config.enforced, config.controller);
@@ -290,10 +270,7 @@ contract DeadlineClauseLogicV3 is ClauseBase {
     /// @param targetInstanceId The instance ID of the target
     /// @param targetIndex The index within the target
     /// @return controller The address that can modify this deadline (address(0) = immutable)
-    function queryController(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external view returns (address) {
+    function queryController(bytes32 targetInstanceId, uint256 targetIndex) external view returns (address) {
         return _getStorage().deadlines[targetInstanceId][targetIndex].controller;
     }
 
@@ -301,10 +278,7 @@ contract DeadlineClauseLogicV3 is ClauseBase {
     /// @param targetInstanceId The instance ID of the target
     /// @param targetIndex The index within the target
     /// @return True if deadline is set and controller is address(0)
-    function queryIsImmutable(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external view returns (bool) {
+    function queryIsImmutable(bytes32 targetInstanceId, uint256 targetIndex) external view returns (bool) {
         DeadlineStorage storage $ = _getStorage();
         DeadlineConfig storage config = $.deadlines[targetInstanceId][targetIndex];
         return config.deadline != 0 && config.controller == address(0);
@@ -314,10 +288,7 @@ contract DeadlineClauseLogicV3 is ClauseBase {
     /// @param targetInstanceId The instance ID of the target
     /// @param targetIndex The index within the target
     /// @return True if deadline is set (non-zero)
-    function queryIsSet(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external view returns (bool) {
+    function queryIsSet(bytes32 targetInstanceId, uint256 targetIndex) external view returns (bool) {
         return _getStorage().deadlines[targetInstanceId][targetIndex].deadline != 0;
     }
 
@@ -325,10 +296,7 @@ contract DeadlineClauseLogicV3 is ClauseBase {
     /// @param targetInstanceId The instance ID of the target
     /// @param targetIndex The index within the target
     /// @return True if deadline is set and current time >= deadline
-    function queryIsExpired(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external view returns (bool) {
+    function queryIsExpired(bytes32 targetInstanceId, uint256 targetIndex) external view returns (bool) {
         DeadlineStorage storage $ = _getStorage();
         uint256 deadline = $.deadlines[targetInstanceId][targetIndex].deadline;
         return deadline != 0 && block.timestamp >= deadline;
@@ -338,10 +306,7 @@ contract DeadlineClauseLogicV3 is ClauseBase {
     /// @param targetInstanceId The instance ID of the target
     /// @param targetIndex The index within the target
     /// @return True if deadline was enforced
-    function queryIsEnforced(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external view returns (bool) {
+    function queryIsEnforced(bytes32 targetInstanceId, uint256 targetIndex) external view returns (bool) {
         return _getStorage().deadlines[targetInstanceId][targetIndex].enforced;
     }
 
@@ -349,25 +314,17 @@ contract DeadlineClauseLogicV3 is ClauseBase {
     /// @param targetInstanceId The instance ID of the target
     /// @param targetIndex The index within the target
     /// @return True if deadline is set, expired, and not yet enforced
-    function queryCanEnforce(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external view returns (bool) {
+    function queryCanEnforce(bytes32 targetInstanceId, uint256 targetIndex) external view returns (bool) {
         DeadlineStorage storage $ = _getStorage();
         DeadlineConfig storage config = $.deadlines[targetInstanceId][targetIndex];
-        return config.deadline != 0 &&
-               block.timestamp >= config.deadline &&
-               !config.enforced;
+        return config.deadline != 0 && block.timestamp >= config.deadline && !config.enforced;
     }
 
     /// @notice Get the configured action for a deadline
     /// @param targetInstanceId The instance ID of the target
     /// @param targetIndex The index within the target
     /// @return action ACTION_RELEASE, ACTION_REFUND, or ACTION_NONE
-    function queryAction(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external view returns (uint8) {
+    function queryAction(bytes32 targetInstanceId, uint256 targetIndex) external view returns (uint8) {
         return _getStorage().deadlines[targetInstanceId][targetIndex].action;
     }
 
@@ -375,10 +332,7 @@ contract DeadlineClauseLogicV3 is ClauseBase {
     /// @param targetInstanceId The instance ID of the target
     /// @param targetIndex The index within the target
     /// @return Time in seconds until deadline, 0 if expired or not set
-    function queryTimeRemaining(
-        bytes32 targetInstanceId,
-        uint256 targetIndex
-    ) external view returns (uint256) {
+    function queryTimeRemaining(bytes32 targetInstanceId, uint256 targetIndex) external view returns (uint256) {
         DeadlineStorage storage $ = _getStorage();
         uint256 deadline = $.deadlines[targetInstanceId][targetIndex].deadline;
         if (deadline == 0 || block.timestamp >= deadline) {

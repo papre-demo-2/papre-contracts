@@ -55,26 +55,15 @@ contract AgreementFactoryV3 is Ownable {
     //                           EVENTS
     // ═══════════════════════════════════════════════════════════════
 
-    event ImplementationRegistered(
-        bytes32 indexed typeId,
-        string name,
-        address indexed implementation
-    );
+    event ImplementationRegistered(bytes32 indexed typeId, string name, address indexed implementation);
 
     event ImplementationUpdated(
-        bytes32 indexed typeId,
-        address indexed oldImplementation,
-        address indexed newImplementation
+        bytes32 indexed typeId, address indexed oldImplementation, address indexed newImplementation
     );
 
     event ImplementationDeactivated(bytes32 indexed typeId);
 
-    event AgreementCreated(
-        address indexed agreement,
-        bytes32 indexed typeId,
-        address indexed creator,
-        bytes32 salt
-    );
+    event AgreementCreated(address indexed agreement, bytes32 indexed typeId, address indexed creator, bytes32 salt);
 
     // ═══════════════════════════════════════════════════════════════
     //                           ERRORS
@@ -100,21 +89,13 @@ contract AgreementFactoryV3 is Ownable {
     /// @param _typeId Unique identifier for the template type (e.g., keccak256("freelance"))
     /// @param _name Human-readable name
     /// @param _implementation Address of the implementation contract
-    function registerTemplate(
-        bytes32 _typeId,
-        string calldata _name,
-        address _implementation
-    ) external onlyOwner {
+    function registerTemplate(bytes32 _typeId, string calldata _name, address _implementation) external onlyOwner {
         if (_implementation == address(0)) revert ZeroAddress();
         if (templates[_typeId].implementation != address(0)) {
             revert TemplateAlreadyRegistered(_typeId);
         }
 
-        templates[_typeId] = TemplateInfo({
-            name: _name,
-            implementation: _implementation,
-            active: true
-        });
+        templates[_typeId] = TemplateInfo({name: _name, implementation: _implementation, active: true});
 
         registeredTypes.push(_typeId);
 
@@ -124,10 +105,7 @@ contract AgreementFactoryV3 is Ownable {
     /// @notice Update a template's implementation
     /// @param _typeId The template type ID
     /// @param _newImplementation New implementation address
-    function updateTemplate(
-        bytes32 _typeId,
-        address _newImplementation
-    ) external onlyOwner {
+    function updateTemplate(bytes32 _typeId, address _newImplementation) external onlyOwner {
         if (_newImplementation == address(0)) revert ZeroAddress();
         if (templates[_typeId].implementation == address(0)) {
             revert TemplateNotRegistered(_typeId);
@@ -167,11 +145,10 @@ contract AgreementFactoryV3 is Ownable {
     /// @param salt Unique salt for deterministic address
     /// @param initData Encoded initialize() call data
     /// @return agreement The deployed Agreement address
-    function createAgreement(
-        bytes32 _typeId,
-        bytes32 salt,
-        bytes calldata initData
-    ) external returns (address agreement) {
+    function createAgreement(bytes32 _typeId, bytes32 salt, bytes calldata initData)
+        external
+        returns (address agreement)
+    {
         return _createAgreement(_typeId, salt, initData, 0);
     }
 
@@ -180,21 +157,19 @@ contract AgreementFactoryV3 is Ownable {
     /// @param salt Unique salt for deterministic address
     /// @param initData Encoded initialize() call data
     /// @return agreement The deployed Agreement address
-    function createAgreementWithValue(
-        bytes32 _typeId,
-        bytes32 salt,
-        bytes calldata initData
-    ) external payable returns (address agreement) {
+    function createAgreementWithValue(bytes32 _typeId, bytes32 salt, bytes calldata initData)
+        external
+        payable
+        returns (address agreement)
+    {
         return _createAgreement(_typeId, salt, initData, msg.value);
     }
 
     /// @dev Internal implementation of agreement creation
-    function _createAgreement(
-        bytes32 _typeId,
-        bytes32 salt,
-        bytes calldata initData,
-        uint256 value
-    ) internal returns (address agreement) {
+    function _createAgreement(bytes32 _typeId, bytes32 salt, bytes calldata initData, uint256 value)
+        internal
+        returns (address agreement)
+    {
         TemplateInfo storage template = templates[_typeId];
 
         if (template.implementation == address(0)) {
@@ -212,7 +187,7 @@ contract AgreementFactoryV3 is Ownable {
 
         // Initialize if initData provided
         if (initData.length > 0) {
-            (bool success, ) = agreement.call{value: value}(initData);
+            (bool success,) = agreement.call{value: value}(initData);
             if (!success) revert InitializationFailed();
         }
 
@@ -234,10 +209,7 @@ contract AgreementFactoryV3 is Ownable {
     /// @param _typeId The template type ID
     /// @return name Template name
     /// @return implementation Implementation address
-    function getTemplateInfo(bytes32 _typeId) external view returns (
-        string memory name,
-        address implementation
-    ) {
+    function getTemplateInfo(bytes32 _typeId) external view returns (string memory name, address implementation) {
         TemplateInfo storage info = templates[_typeId];
         return (info.name, info.implementation);
     }
@@ -252,11 +224,7 @@ contract AgreementFactoryV3 is Ownable {
     /// @param _creator The creator's address
     /// @param salt The salt value
     /// @return The predicted address
-    function predictAddress(
-        bytes32 _typeId,
-        address _creator,
-        bytes32 salt
-    ) external view returns (address) {
+    function predictAddress(bytes32 _typeId, address _creator, bytes32 salt) external view returns (address) {
         TemplateInfo storage template = templates[_typeId];
         if (template.implementation == address(0)) {
             revert TemplateNotRegistered(_typeId);

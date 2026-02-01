@@ -9,8 +9,8 @@ pragma solidity ^0.8.28;
 abstract contract ClauseBase {
     // Common state constants available to all clauses
     // Each clause may define additional states as needed
-    uint16 internal constant UNINITIALIZED = 1 << 0;  // 0x0001
-    uint16 internal constant PENDING       = 1 << 1;  // 0x0002
-    uint16 internal constant COMPLETE      = 1 << 2;  // 0x0004
-    uint16 internal constant CANCELLED     = 1 << 3;  // 0x0008
+    uint16 internal constant UNINITIALIZED = 1 << 0; // 0x0001
+    uint16 internal constant PENDING = 1 << 1; // 0x0002
+    uint16 internal constant COMPLETE = 1 << 2; // 0x0004
+    uint16 internal constant CANCELLED = 1 << 3; // 0x0008
 }

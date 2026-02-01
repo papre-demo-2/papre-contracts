@@ -21,7 +21,6 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 ///      - address(this) = Agreement proxy address
 ///      - Storage reads/writes go to Agreement's storage
 abstract contract AgreementBaseV3 is Initializable {
-
     // ═══════════════════════════════════════════════════════════════
     //                    ERC-7201 STORAGE LAYOUT
     // ═══════════════════════════════════════════════════════════════
@@ -36,8 +35,7 @@ abstract contract AgreementBaseV3 is Initializable {
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.agreement.base.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant BASE_STORAGE_SLOT =
-        0x4a8c5d2e1f3b6a7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b00;
+    bytes32 private constant BASE_STORAGE_SLOT = 0x4a8c5d2e1f3b6a7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b00;
 
     function _getBaseStorage() internal pure returns (BaseStorage storage $) {
         assembly {
@@ -114,10 +112,7 @@ abstract contract AgreementBaseV3 is Initializable {
     /// @param data The encoded function call
     /// @return result The returned data
     /// @dev Uses delegatecall - clause executes in Agreement's storage context
-    function _delegateToClause(
-        address clauseLogic,
-        bytes memory data
-    ) internal returns (bytes memory result) {
+    function _delegateToClause(address clauseLogic, bytes memory data) internal returns (bytes memory result) {
         (bool success, bytes memory returnData) = clauseLogic.delegatecall(data);
         if (!success) {
             // Bubble up revert reason if available
@@ -134,10 +129,7 @@ abstract contract AgreementBaseV3 is Initializable {
     /// @notice Delegate a view call to a clause logic contract
     /// @dev Still uses delegatecall internally. Call via eth_call for gas-free reads.
     ///      Cannot be marked view due to delegatecall.
-    function _delegateViewToClause(
-        address clauseLogic,
-        bytes memory data
-    ) internal returns (bytes memory result) {
+    function _delegateViewToClause(address clauseLogic, bytes memory data) internal returns (bytes memory result) {
         return _delegateToClause(clauseLogic, data);
     }
 

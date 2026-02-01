@@ -5,32 +5,21 @@ pragma solidity ^0.8.28;
 /// @notice Interface for cross-chain message transport following v3 clause patterns
 /// @dev Implementations may use CCIP, LayerZero, Hyperlane, etc.
 interface ICrossChainTransport {
-
     // =============================================================
     // EVENTS
     // =============================================================
 
     /// @notice Emitted when a message is queued for sending
     event MessageQueued(
-        bytes32 indexed instanceId,
-        uint64 indexed destChainSelector,
-        address destAddress,
-        bytes32 payloadHash
+        bytes32 indexed instanceId, uint64 indexed destChainSelector, address destAddress, bytes32 payloadHash
     );
 
     /// @notice Emitted when a message is sent cross-chain
-    event MessageSent(
-        bytes32 indexed instanceId,
-        bytes32 indexed messageId,
-        uint64 destChainSelector
-    );
+    event MessageSent(bytes32 indexed instanceId, bytes32 indexed messageId, uint64 destChainSelector);
 
     /// @notice Emitted when a message is received from another chain
     event MessageReceived(
-        bytes32 indexed instanceId,
-        bytes32 indexed messageId,
-        uint64 sourceChainSelector,
-        address sourceAddress
+        bytes32 indexed instanceId, bytes32 indexed messageId, uint64 sourceChainSelector, address sourceAddress
     );
 
     // =============================================================
@@ -114,7 +103,9 @@ interface ICrossChainTransport {
     /// @return sourceChainSelector The source chain
     /// @return sourceAddress The source contract address
     function handoffSource(bytes32 instanceId)
-        external view returns (uint64 sourceChainSelector, address sourceAddress);
+        external
+        view
+        returns (uint64 sourceChainSelector, address sourceAddress);
 
     // =============================================================
     // QUERY FUNCTIONS

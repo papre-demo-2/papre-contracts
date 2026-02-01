@@ -11,7 +11,6 @@ import {PartyRegistryClauseLogicV3} from "../../src/clauses/access/PartyRegistry
 /// @notice Tests demonstrating how v3 clause outputs get encoded for cross-chain transport
 /// @dev These patterns show the integration between clause handoffs and the codec library
 contract ClauseToCodecHandoffTest is Test {
-
     SignatureClauseLogicV3 public signature;
     DeclarativeClauseLogicV3 public declarative;
     PartyRegistryClauseLogicV3 public registry;
@@ -74,14 +73,10 @@ contract ClauseToCodecHandoffTest is Test {
         address[] memory handoffSigners = signature.handoffSigners(SIG_INSTANCE);
 
         // Encode: Create cross-chain message
-        bytes memory payload = CrossChainCodec.encodeSignaturesComplete(
-            handoffDocHash,
-            handoffSigners
-        );
+        bytes memory payload = CrossChainCodec.encodeSignaturesComplete(handoffDocHash, handoffSigners);
 
         // Verify: Message can be decoded correctly
-        (bytes32 decodedHash, address[] memory decodedSigners) =
-            CrossChainCodec.decodeSignaturesComplete(payload);
+        (bytes32 decodedHash, address[] memory decodedSigners) = CrossChainCodec.decodeSignaturesComplete(payload);
 
         assertEq(decodedHash, docHash);
         assertEq(decodedSigners.length, 2);
@@ -117,11 +112,7 @@ contract ClauseToCodecHandoffTest is Test {
         address handoffRegistrant = declarative.handoffRegistrant(DECL_INSTANCE);
 
         // Encode: Create cross-chain message
-        bytes memory payload = CrossChainCodec.encodeContentSealed(
-            handoffHash,
-            handoffUri,
-            handoffRegistrant
-        );
+        bytes memory payload = CrossChainCodec.encodeContentSealed(handoffHash, handoffUri, handoffRegistrant);
 
         // Verify: Message can be decoded correctly
         (bytes32 decodedHash, string memory decodedUri, address decodedRegistrant) =
@@ -154,11 +145,7 @@ contract ClauseToCodecHandoffTest is Test {
         address handoffRegistrant = declarative.handoffRegistrant(DECL_INSTANCE);
 
         // Encode: Create cross-chain message for registered (not sealed) content
-        bytes memory payload = CrossChainCodec.encodeContentRegistered(
-            handoffHash,
-            handoffUri,
-            handoffRegistrant
-        );
+        bytes memory payload = CrossChainCodec.encodeContentRegistered(handoffHash, handoffUri, handoffRegistrant);
 
         // Verify: Message can be decoded correctly
         (bytes32 decodedHash, string memory decodedUri, address decodedRegistrant) =
@@ -191,8 +178,7 @@ contract ClauseToCodecHandoffTest is Test {
         bytes memory payload = CrossChainCodec.encodePartiesRegistered(SIGNER, signerParties);
 
         // Verify: Message can be decoded correctly
-        (bytes32 decodedRole, address[] memory decodedParties) =
-            CrossChainCodec.decodePartiesRegistered(payload);
+        (bytes32 decodedRole, address[] memory decodedParties) = CrossChainCodec.decodePartiesRegistered(payload);
 
         assertEq(decodedRole, SIGNER);
         assertEq(decodedParties.length, 3);
@@ -238,14 +224,10 @@ contract ClauseToCodecHandoffTest is Test {
         bytes32 finalDocHash = signature.handoffDocumentHash(SIG_INSTANCE);
         address[] memory finalSigners = signature.handoffSigners(SIG_INSTANCE);
 
-        bytes memory payload = CrossChainCodec.encodeSignaturesComplete(
-            finalDocHash,
-            finalSigners
-        );
+        bytes memory payload = CrossChainCodec.encodeSignaturesComplete(finalDocHash, finalSigners);
 
         // Verify: Full pipeline data integrity
-        (bytes32 decodedHash, address[] memory decodedSigners) =
-            CrossChainCodec.decodeSignaturesComplete(payload);
+        (bytes32 decodedHash, address[] memory decodedSigners) = CrossChainCodec.decodeSignaturesComplete(payload);
 
         assertEq(decodedHash, contentHash); // Original content hash preserved
         assertEq(decodedSigners.length, 2);
@@ -276,10 +258,8 @@ contract ClauseToCodecHandoffTest is Test {
         signature.actionSign(SIG_INSTANCE, abi.encodePacked("sig"));
 
         // Create multiple cross-chain messages
-        bytes memory partiesMsg = CrossChainCodec.encodePartiesRegistered(
-            SIGNER,
-            registry.handoffPartiesInRole(REG_INSTANCE, SIGNER)
-        );
+        bytes memory partiesMsg =
+            CrossChainCodec.encodePartiesRegistered(SIGNER, registry.handoffPartiesInRole(REG_INSTANCE, SIGNER));
 
         bytes memory contentMsg = CrossChainCodec.encodeContentSealed(
             declarative.handoffContentHash(DECL_INSTANCE),
@@ -288,8 +268,7 @@ contract ClauseToCodecHandoffTest is Test {
         );
 
         bytes memory signaturesMsg = CrossChainCodec.encodeSignaturesComplete(
-            signature.handoffDocumentHash(SIG_INSTANCE),
-            signature.handoffSigners(SIG_INSTANCE)
+            signature.handoffDocumentHash(SIG_INSTANCE), signature.handoffSigners(SIG_INSTANCE)
         );
 
         // Verify all messages have correct schemas
@@ -304,10 +283,7 @@ contract ClauseToCodecHandoffTest is Test {
     // FUZZ TESTS
     // =============================================================
 
-    function testFuzz_SignatureHandoff_ToCodec(
-        bytes32 docHash,
-        uint8 signerCount
-    ) public {
+    function testFuzz_SignatureHandoff_ToCodec(bytes32 docHash, uint8 signerCount) public {
         vm.assume(signerCount > 0 && signerCount <= 10);
         vm.assume(docHash != bytes32(0));
 
@@ -330,23 +306,17 @@ contract ClauseToCodecHandoffTest is Test {
 
         // Handoff and encode
         bytes memory payload = CrossChainCodec.encodeSignaturesComplete(
-            signature.handoffDocumentHash(instanceId),
-            signature.handoffSigners(instanceId)
+            signature.handoffDocumentHash(instanceId), signature.handoffSigners(instanceId)
         );
 
         // Verify roundtrip
-        (bytes32 decodedHash, address[] memory decodedSigners) =
-            CrossChainCodec.decodeSignaturesComplete(payload);
+        (bytes32 decodedHash, address[] memory decodedSigners) = CrossChainCodec.decodeSignaturesComplete(payload);
 
         assertEq(decodedHash, docHash);
         assertEq(decodedSigners.length, signerCount);
     }
 
-    function testFuzz_DeclarativeHandoff_ToCodec(
-        bytes32 contentHash,
-        string calldata uri,
-        address registrant
-    ) public {
+    function testFuzz_DeclarativeHandoff_ToCodec(bytes32 contentHash, string calldata uri, address registrant) public {
         vm.assume(contentHash != bytes32(0));
         vm.assume(registrant != address(0));
 
@@ -374,10 +344,7 @@ contract ClauseToCodecHandoffTest is Test {
         assertEq(decodedRegistrant, registrant);
     }
 
-    function testFuzz_PartyRegistryHandoff_ToCodec(
-        bytes32 role,
-        uint8 partyCount
-    ) public {
+    function testFuzz_PartyRegistryHandoff_ToCodec(bytes32 role, uint8 partyCount) public {
         vm.assume(role != bytes32(0));
         vm.assume(partyCount > 0 && partyCount <= 10);
 
@@ -395,8 +362,7 @@ contract ClauseToCodecHandoffTest is Test {
         bytes memory payload = CrossChainCodec.encodePartiesRegistered(role, parties);
 
         // Verify roundtrip
-        (bytes32 decodedRole, address[] memory decodedParties) =
-            CrossChainCodec.decodePartiesRegistered(payload);
+        (bytes32 decodedRole, address[] memory decodedParties) = CrossChainCodec.decodePartiesRegistered(payload);
 
         assertEq(decodedRole, role);
         assertEq(decodedParties.length, partyCount);
@@ -405,7 +371,6 @@ contract ClauseToCodecHandoffTest is Test {
 
 /// @title Clause to Codec Invariant Tests
 contract ClauseToCodecInvariantTest is Test {
-
     ClauseCodecHandler public handler;
 
     function setUp() public {
@@ -441,7 +406,6 @@ contract ClauseToCodecInvariantTest is Test {
 
 /// @title Handler for invariant testing
 contract ClauseCodecHandler is Test {
-
     SignatureClauseLogicV3 public signature;
     DeclarativeClauseLogicV3 public declarative;
 
@@ -477,8 +441,7 @@ contract ClauseCodecHandler is Test {
 
         // Encode
         bytes memory payload = CrossChainCodec.encodeSignaturesComplete(
-            signature.handoffDocumentHash(instanceId),
-            signature.handoffSigners(instanceId)
+            signature.handoffDocumentHash(instanceId), signature.handoffSigners(instanceId)
         );
 
         generatedPayloads.push(payload);

@@ -7,7 +7,6 @@ import {PartyRegistryClauseLogicV3} from "../../../src/clauses/access/PartyRegis
 /// @title PartyRegistryClauseLogicV3 Unit Tests
 /// @notice Tests for the v3 self-describing party registry clause with ERC-7201 storage
 contract PartyRegistryClauseLogicV3Test is Test {
-
     PartyRegistryClauseLogicV3 public clause;
 
     // Test accounts
@@ -27,8 +26,8 @@ contract PartyRegistryClauseLogicV3Test is Test {
     bytes32 constant ADMIN = keccak256("ADMIN");
 
     // State constants (matching the contract)
-    uint16 constant UNINITIALIZED = 1 << 0;  // 0x0001
-    uint16 constant ACTIVE        = 1 << 1;  // 0x0002
+    uint16 constant UNINITIALIZED = 1 << 0; // 0x0001
+    uint16 constant ACTIVE = 1 << 1; // 0x0002
 
     function setUp() public {
         clause = new PartyRegistryClauseLogicV3();
@@ -361,7 +360,7 @@ contract PartyRegistryClauseLogicV3Test is Test {
         // Setup registry with signers and other roles
         clause.intakeParty(INSTANCE_1, alice, SIGNER);
         clause.intakeParty(INSTANCE_1, bob, SIGNER);
-        clause.intakeParty(INSTANCE_1, charlie, ARBITER);  // Not a signer
+        clause.intakeParty(INSTANCE_1, charlie, ARBITER); // Not a signer
         clause.intakeReady(INSTANCE_1);
 
         // Get signers for handoff

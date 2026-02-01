@@ -9,7 +9,6 @@ import {SignatureClauseLogicV3} from "../../src/clauses/attestation/SignatureCla
 /// @notice Tests all handoff patterns from PartyRegistryClauseLogicV3 to SignatureClauseLogicV3
 /// @dev Includes unit tests, fuzz tests, and invariant tests
 contract PartyRegistryToSignatureHandoffTest is Test {
-
     PartyRegistryClauseLogicV3 public registry;
     SignatureClauseLogicV3 public signature;
 
@@ -106,8 +105,8 @@ contract PartyRegistryToSignatureHandoffTest is Test {
         // Setup registry with mixed roles
         registry.intakeParty(REGISTRY_INSTANCE, alice, SIGNER);
         registry.intakeParty(REGISTRY_INSTANCE, bob, SIGNER);
-        registry.intakeParty(REGISTRY_INSTANCE, charlie, ARBITER);    // Not a signer
-        registry.intakeParty(REGISTRY_INSTANCE, david, BENEFICIARY);  // Not a signer
+        registry.intakeParty(REGISTRY_INSTANCE, charlie, ARBITER); // Not a signer
+        registry.intakeParty(REGISTRY_INSTANCE, david, BENEFICIARY); // Not a signer
         registry.intakeReady(REGISTRY_INSTANCE);
 
         // Handoff only signers
@@ -409,10 +408,7 @@ contract PartyRegistryToSignatureHandoffTest is Test {
     }
 
     /// @notice Fuzz test: random role assignments, only signers should transfer
-    function testFuzz_Handoff_RandomRoleAssignments(
-        uint8 signerCount,
-        uint8 nonSignerCount
-    ) public {
+    function testFuzz_Handoff_RandomRoleAssignments(uint8 signerCount, uint8 nonSignerCount) public {
         vm.assume(signerCount > 0 && signerCount <= 10);
         vm.assume(nonSignerCount <= 10);
 
@@ -510,7 +506,6 @@ contract PartyRegistryToSignatureHandoffTest is Test {
 /// @title Handoff Invariant Tests
 /// @notice Invariant tests for PartyRegistry → Signature handoff
 contract PartyRegistryToSignatureInvariantTest is Test {
-
     PartyRegistryClauseLogicV3 public registry;
     SignatureClauseLogicV3 public signature;
     HandoffHandler public handler;
@@ -564,10 +559,7 @@ contract PartyRegistryToSignatureInvariantTest is Test {
             if (signature.queryStatus(instance) == COMPLETE) {
                 address[] memory signers = signature.querySigners(instance);
                 for (uint256 j = 0; j < signers.length; j++) {
-                    assertTrue(
-                        signature.queryHasSigned(instance, signers[j]),
-                        "Incomplete signature in COMPLETE state"
-                    );
+                    assertTrue(signature.queryHasSigned(instance, signers[j]), "Incomplete signature in COMPLETE state");
                 }
             }
         }
@@ -603,13 +595,12 @@ contract PartyRegistryToSignatureInvariantTest is Test {
 /// @title Handler contract for invariant testing
 /// @notice Manages state for invariant tests
 contract HandoffHandler is Test {
-
     PartyRegistryClauseLogicV3 public registry;
     SignatureClauseLogicV3 public signature;
 
     bytes32[] public allInstances;
-    bytes32[] public completedInstances;  // Handoff completed
-    bytes32[] public signedInstances;     // Signing completed
+    bytes32[] public completedInstances; // Handoff completed
+    bytes32[] public signedInstances; // Signing completed
 
     mapping(bytes32 => address[]) public registrySigners;
     mapping(bytes32 => address[]) public signatureSigners;

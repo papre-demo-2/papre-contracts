@@ -13,7 +13,6 @@ pragma solidity ^0.8.28;
 ///      - Sender: bytes memory payload = CrossChainCodec.encodeSignaturesComplete(hash, signers);
 ///      - Receiver: (hash, signers) = CrossChainCodec.decodeSignaturesComplete(payload);
 library CrossChainCodec {
-
     // =============================================================
     // ERRORS
     // =============================================================
@@ -87,10 +86,11 @@ library CrossChainCodec {
     /// @param contentHash The content/document hash that was signed
     /// @param signers Array of addresses that signed
     /// @return Encoded payload
-    function encodeSignaturesComplete(
-        bytes32 contentHash,
-        address[] memory signers
-    ) internal pure returns (bytes memory) {
+    function encodeSignaturesComplete(bytes32 contentHash, address[] memory signers)
+        internal
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(SIGNATURES_COMPLETE_V1, contentHash, signers);
     }
 
@@ -114,10 +114,7 @@ library CrossChainCodec {
     /// @param contentHash The content hash being witnessed
     /// @param witness The witness address
     /// @return Encoded payload
-    function encodeWitnessConfirmed(
-        bytes32 contentHash,
-        address witness
-    ) internal pure returns (bytes memory) {
+    function encodeWitnessConfirmed(bytes32 contentHash, address witness) internal pure returns (bytes memory) {
         return abi.encode(WITNESS_CONFIRMED_V1, contentHash, witness);
     }
 
@@ -143,11 +140,11 @@ library CrossChainCodec {
     /// @param uri The content URI (ipfs://, ar://, https://)
     /// @param registrant Who registered the content
     /// @return Encoded payload
-    function encodeContentSealed(
-        bytes32 contentHash,
-        string memory uri,
-        address registrant
-    ) internal pure returns (bytes memory) {
+    function encodeContentSealed(bytes32 contentHash, string memory uri, address registrant)
+        internal
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(CONTENT_SEALED_V1, contentHash, uri, registrant);
     }
 
@@ -158,9 +155,7 @@ library CrossChainCodec {
         returns (bytes32 contentHash, string memory uri, address registrant)
     {
         bytes32 schemaId;
-        (schemaId, contentHash, uri, registrant) = abi.decode(
-            payload, (bytes32, bytes32, string, address)
-        );
+        (schemaId, contentHash, uri, registrant) = abi.decode(payload, (bytes32, bytes32, string, address));
         if (schemaId != CONTENT_SEALED_V1) {
             revert SchemaMismatch(CONTENT_SEALED_V1, schemaId);
         }
@@ -174,11 +169,7 @@ library CrossChainCodec {
     }
 
     /// @notice Decode a "content revoked" message
-    function decodeContentRevoked(bytes memory payload)
-        internal
-        pure
-        returns (bytes32 contentHash)
-    {
+    function decodeContentRevoked(bytes memory payload) internal pure returns (bytes32 contentHash) {
         bytes32 schemaId;
         (schemaId, contentHash) = abi.decode(payload, (bytes32, bytes32));
         if (schemaId != CONTENT_REVOKED_V1) {
@@ -191,11 +182,11 @@ library CrossChainCodec {
     /// @param uri The content URI
     /// @param registrant Who registered the content
     /// @return Encoded payload
-    function encodeContentRegistered(
-        bytes32 contentHash,
-        string memory uri,
-        address registrant
-    ) internal pure returns (bytes memory) {
+    function encodeContentRegistered(bytes32 contentHash, string memory uri, address registrant)
+        internal
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(CONTENT_REGISTERED_V1, contentHash, uri, registrant);
     }
 
@@ -206,9 +197,7 @@ library CrossChainCodec {
         returns (bytes32 contentHash, string memory uri, address registrant)
     {
         bytes32 schemaId;
-        (schemaId, contentHash, uri, registrant) = abi.decode(
-            payload, (bytes32, bytes32, string, address)
-        );
+        (schemaId, contentHash, uri, registrant) = abi.decode(payload, (bytes32, bytes32, string, address));
         if (schemaId != CONTENT_REGISTERED_V1) {
             revert SchemaMismatch(CONTENT_REGISTERED_V1, schemaId);
         }
@@ -223,11 +212,11 @@ library CrossChainCodec {
     /// @param token The token address (address(0) for native)
     /// @param depositor Who funded the escrow
     /// @return Encoded payload
-    function encodeEscrowFunded(
-        uint256 amount,
-        address token,
-        address depositor
-    ) internal pure returns (bytes memory) {
+    function encodeEscrowFunded(uint256 amount, address token, address depositor)
+        internal
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(ESCROW_FUNDED_V1, amount, token, depositor);
     }
 
@@ -238,9 +227,7 @@ library CrossChainCodec {
         returns (uint256 amount, address token, address depositor)
     {
         bytes32 schemaId;
-        (schemaId, amount, token, depositor) = abi.decode(
-            payload, (bytes32, uint256, address, address)
-        );
+        (schemaId, amount, token, depositor) = abi.decode(payload, (bytes32, uint256, address, address));
         if (schemaId != ESCROW_FUNDED_V1) {
             revert SchemaMismatch(ESCROW_FUNDED_V1, schemaId);
         }
@@ -251,11 +238,11 @@ library CrossChainCodec {
     /// @param recipient Who should receive the funds
     /// @param contentHash Reference to what was signed/completed
     /// @return Encoded payload
-    function encodeReleaseAuthorized(
-        uint256 amount,
-        address recipient,
-        bytes32 contentHash
-    ) internal pure returns (bytes memory) {
+    function encodeReleaseAuthorized(uint256 amount, address recipient, bytes32 contentHash)
+        internal
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(RELEASE_AUTHORIZED_V1, amount, recipient, contentHash);
     }
 
@@ -266,9 +253,7 @@ library CrossChainCodec {
         returns (uint256 amount, address recipient, bytes32 contentHash)
     {
         bytes32 schemaId;
-        (schemaId, amount, recipient, contentHash) = abi.decode(
-            payload, (bytes32, uint256, address, bytes32)
-        );
+        (schemaId, amount, recipient, contentHash) = abi.decode(payload, (bytes32, uint256, address, bytes32));
         if (schemaId != RELEASE_AUTHORIZED_V1) {
             revert SchemaMismatch(RELEASE_AUTHORIZED_V1, schemaId);
         }
@@ -279,11 +264,11 @@ library CrossChainCodec {
     /// @param recipient Who should receive the refund
     /// @param reason Hash of reason for refund
     /// @return Encoded payload
-    function encodeRefundAuthorized(
-        uint256 amount,
-        address recipient,
-        bytes32 reason
-    ) internal pure returns (bytes memory) {
+    function encodeRefundAuthorized(uint256 amount, address recipient, bytes32 reason)
+        internal
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(REFUND_AUTHORIZED_V1, amount, recipient, reason);
     }
 
@@ -294,9 +279,7 @@ library CrossChainCodec {
         returns (uint256 amount, address recipient, bytes32 reason)
     {
         bytes32 schemaId;
-        (schemaId, amount, recipient, reason) = abi.decode(
-            payload, (bytes32, uint256, address, bytes32)
-        );
+        (schemaId, amount, recipient, reason) = abi.decode(payload, (bytes32, uint256, address, bytes32));
         if (schemaId != REFUND_AUTHORIZED_V1) {
             revert SchemaMismatch(REFUND_AUTHORIZED_V1, schemaId);
         }
@@ -310,19 +293,12 @@ library CrossChainCodec {
     /// @param conditionId Identifier for the condition
     /// @param value The value that triggered the condition (encoded as bytes32)
     /// @return Encoded payload
-    function encodeConditionMet(
-        bytes32 conditionId,
-        bytes32 value
-    ) internal pure returns (bytes memory) {
+    function encodeConditionMet(bytes32 conditionId, bytes32 value) internal pure returns (bytes memory) {
         return abi.encode(CONDITION_MET_V1, conditionId, value);
     }
 
     /// @notice Decode a "condition met" message
-    function decodeConditionMet(bytes memory payload)
-        internal
-        pure
-        returns (bytes32 conditionId, bytes32 value)
-    {
+    function decodeConditionMet(bytes memory payload) internal pure returns (bytes32 conditionId, bytes32 value) {
         bytes32 schemaId;
         (schemaId, conditionId, value) = abi.decode(payload, (bytes32, bytes32, bytes32));
         if (schemaId != CONDITION_MET_V1) {
@@ -334,10 +310,7 @@ library CrossChainCodec {
     /// @param deadlineId Identifier for the deadline
     /// @param timestamp When the deadline was reached
     /// @return Encoded payload
-    function encodeDeadlineReached(
-        bytes32 deadlineId,
-        uint256 timestamp
-    ) internal pure returns (bytes memory) {
+    function encodeDeadlineReached(bytes32 deadlineId, uint256 timestamp) internal pure returns (bytes memory) {
         return abi.encode(DEADLINE_REACHED_V1, deadlineId, timestamp);
     }
 
@@ -358,19 +331,12 @@ library CrossChainCodec {
     /// @param lockId Identifier for the timelock
     /// @param unlockedAt When it was unlocked
     /// @return Encoded payload
-    function encodeTimelockUnlocked(
-        bytes32 lockId,
-        uint256 unlockedAt
-    ) internal pure returns (bytes memory) {
+    function encodeTimelockUnlocked(bytes32 lockId, uint256 unlockedAt) internal pure returns (bytes memory) {
         return abi.encode(TIMELOCK_UNLOCKED_V1, lockId, unlockedAt);
     }
 
     /// @notice Decode a "timelock unlocked" message
-    function decodeTimelockUnlocked(bytes memory payload)
-        internal
-        pure
-        returns (bytes32 lockId, uint256 unlockedAt)
-    {
+    function decodeTimelockUnlocked(bytes memory payload) internal pure returns (bytes32 lockId, uint256 unlockedAt) {
         bytes32 schemaId;
         (schemaId, lockId, unlockedAt) = abi.decode(payload, (bytes32, bytes32, uint256));
         if (schemaId != TIMELOCK_UNLOCKED_V1) {
@@ -386,10 +352,7 @@ library CrossChainCodec {
     /// @param role The role these parties have
     /// @param parties Array of party addresses
     /// @return Encoded payload
-    function encodePartiesRegistered(
-        bytes32 role,
-        address[] memory parties
-    ) internal pure returns (bytes memory) {
+    function encodePartiesRegistered(bytes32 role, address[] memory parties) internal pure returns (bytes memory) {
         return abi.encode(PARTIES_REGISTERED_V1, role, parties);
     }
 
@@ -411,11 +374,11 @@ library CrossChainCodec {
     /// @param permission The permission identifier
     /// @param granter Who granted it
     /// @return Encoded payload
-    function encodePermissionGranted(
-        address grantee,
-        bytes32 permission,
-        address granter
-    ) internal pure returns (bytes memory) {
+    function encodePermissionGranted(address grantee, bytes32 permission, address granter)
+        internal
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(PERMISSION_GRANTED_V1, grantee, permission, granter);
     }
 
@@ -426,9 +389,7 @@ library CrossChainCodec {
         returns (address grantee, bytes32 permission, address granter)
     {
         bytes32 schemaId;
-        (schemaId, grantee, permission, granter) = abi.decode(
-            payload, (bytes32, address, bytes32, address)
-        );
+        (schemaId, grantee, permission, granter) = abi.decode(payload, (bytes32, address, bytes32, address));
         if (schemaId != PERMISSION_GRANTED_V1) {
             revert SchemaMismatch(PERMISSION_GRANTED_V1, schemaId);
         }
@@ -444,12 +405,11 @@ library CrossChainCodec {
     /// @param weight The vote weight
     /// @param support True for yes, false for no
     /// @return Encoded payload
-    function encodeVoteRecorded(
-        bytes32 proposalId,
-        address voter,
-        uint256 weight,
-        bool support
-    ) internal pure returns (bytes memory) {
+    function encodeVoteRecorded(bytes32 proposalId, address voter, uint256 weight, bool support)
+        internal
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(VOTE_RECORDED_V1, proposalId, voter, weight, support);
     }
 
@@ -460,9 +420,7 @@ library CrossChainCodec {
         returns (bytes32 proposalId, address voter, uint256 weight, bool support)
     {
         bytes32 schemaId;
-        (schemaId, proposalId, voter, weight, support) = abi.decode(
-            payload, (bytes32, bytes32, address, uint256, bool)
-        );
+        (schemaId, proposalId, voter, weight, support) = abi.decode(payload, (bytes32, bytes32, address, uint256, bool));
         if (schemaId != VOTE_RECORDED_V1) {
             revert SchemaMismatch(VOTE_RECORDED_V1, schemaId);
         }
@@ -473,11 +431,11 @@ library CrossChainCodec {
     /// @param totalWeight Total weight of votes
     /// @param threshold The quorum threshold
     /// @return Encoded payload
-    function encodeQuorumReached(
-        bytes32 proposalId,
-        uint256 totalWeight,
-        uint256 threshold
-    ) internal pure returns (bytes memory) {
+    function encodeQuorumReached(bytes32 proposalId, uint256 totalWeight, uint256 threshold)
+        internal
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(QUORUM_REACHED_V1, proposalId, totalWeight, threshold);
     }
 
@@ -488,9 +446,7 @@ library CrossChainCodec {
         returns (bytes32 proposalId, uint256 totalWeight, uint256 threshold)
     {
         bytes32 schemaId;
-        (schemaId, proposalId, totalWeight, threshold) = abi.decode(
-            payload, (bytes32, bytes32, uint256, uint256)
-        );
+        (schemaId, proposalId, totalWeight, threshold) = abi.decode(payload, (bytes32, bytes32, uint256, uint256));
         if (schemaId != QUORUM_REACHED_V1) {
             revert SchemaMismatch(QUORUM_REACHED_V1, schemaId);
         }
@@ -501,11 +457,11 @@ library CrossChainCodec {
     /// @param ruling The ruling value (0=none, 1=party1, 2=party2, etc.)
     /// @param arbiter Who issued the ruling
     /// @return Encoded payload
-    function encodeRulingIssued(
-        bytes32 disputeId,
-        uint8 ruling,
-        address arbiter
-    ) internal pure returns (bytes memory) {
+    function encodeRulingIssued(bytes32 disputeId, uint8 ruling, address arbiter)
+        internal
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(RULING_ISSUED_V1, disputeId, ruling, arbiter);
     }
 
@@ -516,9 +472,7 @@ library CrossChainCodec {
         returns (bytes32 disputeId, uint8 ruling, address arbiter)
     {
         bytes32 schemaId;
-        (schemaId, disputeId, ruling, arbiter) = abi.decode(
-            payload, (bytes32, bytes32, uint8, address)
-        );
+        (schemaId, disputeId, ruling, arbiter) = abi.decode(payload, (bytes32, bytes32, uint8, address));
         if (schemaId != RULING_ISSUED_V1) {
             revert SchemaMismatch(RULING_ISSUED_V1, schemaId);
         }
@@ -534,10 +488,7 @@ library CrossChainCodec {
     /// @return Encoded payload
     /// @dev Use this for custom message types not covered by standard schemas.
     ///      Receiver must know how to decode based on customSchemaId.
-    function encodeGeneric(
-        bytes32 customSchemaId,
-        bytes memory data
-    ) internal pure returns (bytes memory) {
+    function encodeGeneric(bytes32 customSchemaId, bytes memory data) internal pure returns (bytes memory) {
         return abi.encode(GENERIC_V1, customSchemaId, data);
     }
 
@@ -545,11 +496,7 @@ library CrossChainCodec {
     /// @param payload The encoded payload
     /// @return customSchemaId The custom schema identifier
     /// @return data The raw data (still encoded)
-    function decodeGeneric(bytes memory payload)
-        internal
-        pure
-        returns (bytes32 customSchemaId, bytes memory data)
-    {
+    function decodeGeneric(bytes memory payload) internal pure returns (bytes32 customSchemaId, bytes memory data) {
         bytes32 schemaId;
         (schemaId, customSchemaId, data) = abi.decode(payload, (bytes32, bytes32, bytes));
         if (schemaId != GENERIC_V1) {

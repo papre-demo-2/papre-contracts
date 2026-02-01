@@ -11,9 +11,7 @@ contract CrossChainCodecWrapper {
         return CrossChainCodec.getSchemaId(payload);
     }
 
-    function decodeSignaturesComplete(bytes memory payload)
-        external pure returns (bytes32, address[] memory)
-    {
+    function decodeSignaturesComplete(bytes memory payload) external pure returns (bytes32, address[] memory) {
         return CrossChainCodec.decodeSignaturesComplete(payload);
     }
 }
@@ -21,7 +19,6 @@ contract CrossChainCodecWrapper {
 /// @title CrossChainCodec Unit Tests
 /// @notice Tests for the cross-chain message encoding/decoding library
 contract CrossChainCodecTest is Test {
-
     // Test accounts
     address alice;
     address bob;
@@ -42,10 +39,7 @@ contract CrossChainCodecTest is Test {
     // =============================================================
 
     function test_GetSchemaId_ExtractsCorrectly() public pure {
-        bytes memory payload = CrossChainCodec.encodeSignaturesComplete(
-            keccak256("doc"),
-            new address[](0)
-        );
+        bytes memory payload = CrossChainCodec.encodeSignaturesComplete(keccak256("doc"), new address[](0));
 
         bytes32 schemaId = CrossChainCodec.getSchemaId(payload);
         assertEq(schemaId, CrossChainCodec.SIGNATURES_COMPLETE_V1);
@@ -59,21 +53,13 @@ contract CrossChainCodecTest is Test {
     }
 
     function test_IsSchema_ReturnsTrue() public pure {
-        bytes memory payload = CrossChainCodec.encodeContentSealed(
-            keccak256("content"),
-            "ipfs://test",
-            address(0x123)
-        );
+        bytes memory payload = CrossChainCodec.encodeContentSealed(keccak256("content"), "ipfs://test", address(0x123));
 
         assertTrue(CrossChainCodec.isSchema(payload, CrossChainCodec.CONTENT_SEALED_V1));
     }
 
     function test_IsSchema_ReturnsFalse_WrongSchema() public pure {
-        bytes memory payload = CrossChainCodec.encodeContentSealed(
-            keccak256("content"),
-            "ipfs://test",
-            address(0x123)
-        );
+        bytes memory payload = CrossChainCodec.encodeContentSealed(keccak256("content"), "ipfs://test", address(0x123));
 
         assertFalse(CrossChainCodec.isSchema(payload, CrossChainCodec.SIGNATURES_COMPLETE_V1));
     }
@@ -96,8 +82,7 @@ contract CrossChainCodecTest is Test {
 
         bytes memory payload = CrossChainCodec.encodeSignaturesComplete(contentHash, signers);
 
-        (bytes32 decodedHash, address[] memory decodedSigners) =
-            CrossChainCodec.decodeSignaturesComplete(payload);
+        (bytes32 decodedHash, address[] memory decodedSigners) = CrossChainCodec.decodeSignaturesComplete(payload);
 
         assertEq(decodedHash, contentHash);
         assertEq(decodedSigners.length, 3);
@@ -112,8 +97,7 @@ contract CrossChainCodecTest is Test {
 
         bytes memory payload = CrossChainCodec.encodeSignaturesComplete(contentHash, signers);
 
-        (bytes32 decodedHash, address[] memory decodedSigners) =
-            CrossChainCodec.decodeSignaturesComplete(payload);
+        (bytes32 decodedHash, address[] memory decodedSigners) = CrossChainCodec.decodeSignaturesComplete(payload);
 
         assertEq(decodedHash, contentHash);
         assertEq(decodedSigners.length, 0);
@@ -128,11 +112,13 @@ contract CrossChainCodecTest is Test {
             new address[](0)
         );
 
-        vm.expectRevert(abi.encodeWithSelector(
-            CrossChainCodec.SchemaMismatch.selector,
-            CrossChainCodec.SIGNATURES_COMPLETE_V1,
-            CrossChainCodec.CONTENT_SEALED_V1
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CrossChainCodec.SchemaMismatch.selector,
+                CrossChainCodec.SIGNATURES_COMPLETE_V1,
+                CrossChainCodec.CONTENT_SEALED_V1
+            )
+        );
         wrapper.decodeSignaturesComplete(wrongPayload);
     }
 
@@ -141,8 +127,7 @@ contract CrossChainCodecTest is Test {
 
         bytes memory payload = CrossChainCodec.encodeWitnessConfirmed(contentHash, alice);
 
-        (bytes32 decodedHash, address decodedWitness) =
-            CrossChainCodec.decodeWitnessConfirmed(payload);
+        (bytes32 decodedHash, address decodedWitness) = CrossChainCodec.decodeWitnessConfirmed(payload);
 
         assertEq(decodedHash, contentHash);
         assertEq(decodedWitness, alice);
@@ -255,12 +240,11 @@ contract CrossChainCodecTest is Test {
 
     function test_ConditionMet_RoundTrip() public pure {
         bytes32 conditionId = keccak256("price-threshold");
-        bytes32 value = bytes32(uint256(1000 * 10**18)); // Price value
+        bytes32 value = bytes32(uint256(1000 * 10 ** 18)); // Price value
 
         bytes memory payload = CrossChainCodec.encodeConditionMet(conditionId, value);
 
-        (bytes32 decodedId, bytes32 decodedValue) =
-            CrossChainCodec.decodeConditionMet(payload);
+        (bytes32 decodedId, bytes32 decodedValue) = CrossChainCodec.decodeConditionMet(payload);
 
         assertEq(decodedId, conditionId);
         assertEq(decodedValue, value);
@@ -272,8 +256,7 @@ contract CrossChainCodecTest is Test {
 
         bytes memory payload = CrossChainCodec.encodeDeadlineReached(deadlineId, timestamp);
 
-        (bytes32 decodedId, uint256 decodedTimestamp) =
-            CrossChainCodec.decodeDeadlineReached(payload);
+        (bytes32 decodedId, uint256 decodedTimestamp) = CrossChainCodec.decodeDeadlineReached(payload);
 
         assertEq(decodedId, deadlineId);
         assertEq(decodedTimestamp, timestamp);
@@ -285,8 +268,7 @@ contract CrossChainCodecTest is Test {
 
         bytes memory payload = CrossChainCodec.encodeTimelockUnlocked(lockId, unlockedAt);
 
-        (bytes32 decodedId, uint256 decodedUnlockedAt) =
-            CrossChainCodec.decodeTimelockUnlocked(payload);
+        (bytes32 decodedId, uint256 decodedUnlockedAt) = CrossChainCodec.decodeTimelockUnlocked(payload);
 
         assertEq(decodedId, lockId);
         assertEq(decodedUnlockedAt, unlockedAt);
@@ -304,8 +286,7 @@ contract CrossChainCodecTest is Test {
 
         bytes memory payload = CrossChainCodec.encodePartiesRegistered(role, parties);
 
-        (bytes32 decodedRole, address[] memory decodedParties) =
-            CrossChainCodec.decodePartiesRegistered(payload);
+        (bytes32 decodedRole, address[] memory decodedParties) = CrossChainCodec.decodePartiesRegistered(payload);
 
         assertEq(decodedRole, role);
         assertEq(decodedParties.length, 2);
@@ -385,8 +366,7 @@ contract CrossChainCodecTest is Test {
 
         bytes memory payload = CrossChainCodec.encodeGeneric(customSchemaId, innerData);
 
-        (bytes32 decodedSchemaId, bytes memory decodedData) =
-            CrossChainCodec.decodeGeneric(payload);
+        (bytes32 decodedSchemaId, bytes memory decodedData) = CrossChainCodec.decodeGeneric(payload);
 
         assertEq(decodedSchemaId, customSchemaId);
         assertEq(keccak256(decodedData), keccak256(innerData));
@@ -396,10 +376,7 @@ contract CrossChainCodecTest is Test {
     // FUZZ TESTS
     // =============================================================
 
-    function testFuzz_SignaturesComplete_RoundTrip(
-        bytes32 contentHash,
-        uint8 signerCount
-    ) public {
+    function testFuzz_SignaturesComplete_RoundTrip(bytes32 contentHash, uint8 signerCount) public {
         vm.assume(signerCount <= 20);
 
         address[] memory signers = new address[](signerCount);
@@ -409,8 +386,7 @@ contract CrossChainCodecTest is Test {
 
         bytes memory payload = CrossChainCodec.encodeSignaturesComplete(contentHash, signers);
 
-        (bytes32 decodedHash, address[] memory decodedSigners) =
-            CrossChainCodec.decodeSignaturesComplete(payload);
+        (bytes32 decodedHash, address[] memory decodedSigners) = CrossChainCodec.decodeSignaturesComplete(payload);
 
         assertEq(decodedHash, contentHash);
         assertEq(decodedSigners.length, signerCount);
@@ -419,10 +395,7 @@ contract CrossChainCodecTest is Test {
         }
     }
 
-    function testFuzz_ContentSealed_RoundTrip(
-        bytes32 contentHash,
-        address registrant
-    ) public pure {
+    function testFuzz_ContentSealed_RoundTrip(bytes32 contentHash, address registrant) public pure {
         string memory uri = "ipfs://fuzz-test-uri";
 
         bytes memory payload = CrossChainCodec.encodeContentSealed(contentHash, uri, registrant);
@@ -435,11 +408,7 @@ contract CrossChainCodecTest is Test {
         assertEq(decodedRegistrant, registrant);
     }
 
-    function testFuzz_EscrowFunded_RoundTrip(
-        uint256 amount,
-        address token,
-        address depositor
-    ) public pure {
+    function testFuzz_EscrowFunded_RoundTrip(uint256 amount, address token, address depositor) public pure {
         bytes memory payload = CrossChainCodec.encodeEscrowFunded(amount, token, depositor);
 
         (uint256 decodedAmount, address decodedToken, address decodedDepositor) =
@@ -450,11 +419,7 @@ contract CrossChainCodecTest is Test {
         assertEq(decodedDepositor, depositor);
     }
 
-    function testFuzz_ReleaseAuthorized_RoundTrip(
-        uint256 amount,
-        address recipient,
-        bytes32 contentHash
-    ) public pure {
+    function testFuzz_ReleaseAuthorized_RoundTrip(uint256 amount, address recipient, bytes32 contentHash) public pure {
         bytes memory payload = CrossChainCodec.encodeReleaseAuthorized(amount, recipient, contentHash);
 
         (uint256 decodedAmount, address decodedRecipient, bytes32 decodedHash) =
@@ -465,23 +430,16 @@ contract CrossChainCodecTest is Test {
         assertEq(decodedHash, contentHash);
     }
 
-    function testFuzz_ConditionMet_RoundTrip(
-        bytes32 conditionId,
-        bytes32 value
-    ) public pure {
+    function testFuzz_ConditionMet_RoundTrip(bytes32 conditionId, bytes32 value) public pure {
         bytes memory payload = CrossChainCodec.encodeConditionMet(conditionId, value);
 
-        (bytes32 decodedId, bytes32 decodedValue) =
-            CrossChainCodec.decodeConditionMet(payload);
+        (bytes32 decodedId, bytes32 decodedValue) = CrossChainCodec.decodeConditionMet(payload);
 
         assertEq(decodedId, conditionId);
         assertEq(decodedValue, value);
     }
 
-    function testFuzz_PartiesRegistered_RoundTrip(
-        bytes32 role,
-        uint8 partyCount
-    ) public {
+    function testFuzz_PartiesRegistered_RoundTrip(bytes32 role, uint8 partyCount) public {
         vm.assume(partyCount <= 20);
 
         address[] memory parties = new address[](partyCount);
@@ -491,8 +449,7 @@ contract CrossChainCodecTest is Test {
 
         bytes memory payload = CrossChainCodec.encodePartiesRegistered(role, parties);
 
-        (bytes32 decodedRole, address[] memory decodedParties) =
-            CrossChainCodec.decodePartiesRegistered(payload);
+        (bytes32 decodedRole, address[] memory decodedParties) = CrossChainCodec.decodePartiesRegistered(payload);
 
         assertEq(decodedRole, role);
         assertEq(decodedParties.length, partyCount);
@@ -501,12 +458,10 @@ contract CrossChainCodecTest is Test {
         }
     }
 
-    function testFuzz_VoteRecorded_RoundTrip(
-        bytes32 proposalId,
-        address voter,
-        uint256 weight,
-        bool support
-    ) public pure {
+    function testFuzz_VoteRecorded_RoundTrip(bytes32 proposalId, address voter, uint256 weight, bool support)
+        public
+        pure
+    {
         bytes memory payload = CrossChainCodec.encodeVoteRecorded(proposalId, voter, weight, support);
 
         (bytes32 decodedProposal, address decodedVoter, uint256 decodedWeight, bool decodedSupport) =
@@ -518,14 +473,10 @@ contract CrossChainCodecTest is Test {
         assertEq(decodedSupport, support);
     }
 
-    function testFuzz_Generic_RoundTrip(
-        bytes32 customSchemaId,
-        bytes memory innerData
-    ) public pure {
+    function testFuzz_Generic_RoundTrip(bytes32 customSchemaId, bytes memory innerData) public pure {
         bytes memory payload = CrossChainCodec.encodeGeneric(customSchemaId, innerData);
 
-        (bytes32 decodedSchemaId, bytes memory decodedData) =
-            CrossChainCodec.decodeGeneric(payload);
+        (bytes32 decodedSchemaId, bytes memory decodedData) = CrossChainCodec.decodeGeneric(payload);
 
         assertEq(decodedSchemaId, customSchemaId);
         assertEq(keccak256(decodedData), keccak256(innerData));
@@ -584,7 +535,6 @@ contract CrossChainCodecTest is Test {
 /// @title CrossChainCodec Invariant Tests
 /// @notice Invariant tests for codec encode/decode symmetry
 contract CrossChainCodecInvariantTest is Test {
-
     CodecHandler public handler;
 
     function setUp() public {
@@ -611,18 +561,9 @@ contract CrossChainCodecInvariantTest is Test {
     /// @notice Invariant: Schema IDs are deterministic
     function invariant_SchemaIdsDeterministic() public pure {
         // These should always be the same
-        assertEq(
-            CrossChainCodec.SIGNATURES_COMPLETE_V1,
-            keccak256("papre.SignaturesComplete.v1")
-        );
-        assertEq(
-            CrossChainCodec.CONTENT_SEALED_V1,
-            keccak256("papre.ContentSealed.v1")
-        );
-        assertEq(
-            CrossChainCodec.ESCROW_FUNDED_V1,
-            keccak256("papre.EscrowFunded.v1")
-        );
+        assertEq(CrossChainCodec.SIGNATURES_COMPLETE_V1, keccak256("papre.SignaturesComplete.v1"));
+        assertEq(CrossChainCodec.CONTENT_SEALED_V1, keccak256("papre.ContentSealed.v1"));
+        assertEq(CrossChainCodec.ESCROW_FUNDED_V1, keccak256("papre.EscrowFunded.v1"));
     }
 
     struct EncodedMessage {
@@ -633,7 +574,6 @@ contract CrossChainCodecInvariantTest is Test {
 
 /// @title Handler for invariant testing
 contract CodecHandler is Test {
-
     CrossChainCodecInvariantTest.EncodedMessage[] public encodedMessages;
 
     function encodeSignaturesComplete(bytes32 contentHash, uint8 signerCount) public {
@@ -646,41 +586,45 @@ contract CodecHandler is Test {
 
         bytes memory payload = CrossChainCodec.encodeSignaturesComplete(contentHash, signers);
 
-        encodedMessages.push(CrossChainCodecInvariantTest.EncodedMessage({
-            payload: payload,
-            expectedSchemaId: CrossChainCodec.SIGNATURES_COMPLETE_V1
-        }));
+        encodedMessages.push(
+            CrossChainCodecInvariantTest.EncodedMessage({
+                payload: payload,
+                expectedSchemaId: CrossChainCodec.SIGNATURES_COMPLETE_V1
+            })
+        );
     }
 
     function encodeContentSealed(bytes32 contentHash, address registrant) public {
-        bytes memory payload = CrossChainCodec.encodeContentSealed(
-            contentHash,
-            "ipfs://test",
-            registrant
-        );
+        bytes memory payload = CrossChainCodec.encodeContentSealed(contentHash, "ipfs://test", registrant);
 
-        encodedMessages.push(CrossChainCodecInvariantTest.EncodedMessage({
-            payload: payload,
-            expectedSchemaId: CrossChainCodec.CONTENT_SEALED_V1
-        }));
+        encodedMessages.push(
+            CrossChainCodecInvariantTest.EncodedMessage({
+                payload: payload,
+                expectedSchemaId: CrossChainCodec.CONTENT_SEALED_V1
+            })
+        );
     }
 
     function encodeEscrowFunded(uint256 amount, address token, address depositor) public {
         bytes memory payload = CrossChainCodec.encodeEscrowFunded(amount, token, depositor);
 
-        encodedMessages.push(CrossChainCodecInvariantTest.EncodedMessage({
-            payload: payload,
-            expectedSchemaId: CrossChainCodec.ESCROW_FUNDED_V1
-        }));
+        encodedMessages.push(
+            CrossChainCodecInvariantTest.EncodedMessage({
+                payload: payload,
+                expectedSchemaId: CrossChainCodec.ESCROW_FUNDED_V1
+            })
+        );
     }
 
     function encodeConditionMet(bytes32 conditionId, bytes32 value) public {
         bytes memory payload = CrossChainCodec.encodeConditionMet(conditionId, value);
 
-        encodedMessages.push(CrossChainCodecInvariantTest.EncodedMessage({
-            payload: payload,
-            expectedSchemaId: CrossChainCodec.CONDITION_MET_V1
-        }));
+        encodedMessages.push(
+            CrossChainCodecInvariantTest.EncodedMessage({
+                payload: payload,
+                expectedSchemaId: CrossChainCodec.CONDITION_MET_V1
+            })
+        );
     }
 
     function getEncodedMessages() external view returns (CrossChainCodecInvariantTest.EncodedMessage[] memory) {

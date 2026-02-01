@@ -20,7 +20,6 @@ import {SignatureEscrowCrossChainAdapter} from "../../src/adapters/SignatureEscr
 ///      The adapter orchestrates both CrossChainClauseLogicV3 (state tracking) and
 ///      the business logic clauses (Signature/Escrow).
 contract CrossChainSignatureToEscrowTest is Test {
-
     // CCIP Local simulator
     CCIPLocalSimulator public ccipSimulator;
 
@@ -59,9 +58,9 @@ contract CrossChainSignatureToEscrowTest is Test {
     bytes32 constant CROSSCHAIN_INSTANCE_B = keccak256("crosschain-instance-b"); // Destination chain tracking
 
     // State constants
-    uint16 constant PENDING = 1 << 1;  // 0x0002
+    uint16 constant PENDING = 1 << 1; // 0x0002
     uint16 constant COMPLETE = 1 << 2; // 0x0004
-    uint16 constant FUNDED = 1 << 2;   // 0x0004 (same as COMPLETE for escrow)
+    uint16 constant FUNDED = 1 << 2; // 0x0004 (same as COMPLETE for escrow)
     uint16 constant RELEASED = 1 << 3; // 0x0008
 
     function setUp() public {
@@ -70,15 +69,7 @@ contract CrossChainSignatureToEscrowTest is Test {
 
         // Get configuration
         IRouterClient sourceRouter;
-        (
-            chainSelector,
-            sourceRouter,
-            ,
-            ,
-            ,
-            ,
-
-        ) = ccipSimulator.configuration();
+        (chainSelector, sourceRouter,,,,,) = ccipSimulator.configuration();
         routerAddress = address(sourceRouter);
         linkToken = address(0); // Use native token for fees in local mode
 
@@ -93,16 +84,10 @@ contract CrossChainSignatureToEscrowTest is Test {
 
         // Deploy adapters (one per chain with appropriate controller)
         adapterA = new SignatureEscrowCrossChainAdapter(
-            address(signatureClause),
-            address(escrowClause),
-            address(crossChainClause),
-            address(controllerA)
+            address(signatureClause), address(escrowClause), address(crossChainClause), address(controllerA)
         );
         adapterB = new SignatureEscrowCrossChainAdapter(
-            address(signatureClause),
-            address(escrowClause),
-            address(crossChainClause),
-            address(controllerB)
+            address(signatureClause), address(escrowClause), address(crossChainClause), address(controllerB)
         );
 
         // Setup accounts
@@ -118,16 +103,10 @@ contract CrossChainSignatureToEscrowTest is Test {
 
         // Deploy mock agreements (now with adapter references)
         agreementA = new MockAgreementA(
-            address(signatureClause),
-            address(crossChainClause),
-            address(controllerA),
-            address(adapterA)
+            address(signatureClause), address(crossChainClause), address(controllerA), address(adapterA)
         );
         agreementB = new MockAgreementB(
-            address(escrowClause),
-            address(crossChainClause),
-            address(controllerB),
-            address(adapterB)
+            address(escrowClause), address(crossChainClause), address(controllerB), address(adapterB)
         );
 
         // Configure controllers
@@ -183,20 +162,12 @@ contract CrossChainSignatureToEscrowTest is Test {
         // Step 4: Trigger cross-chain release VIA ADAPTER
         // The adapter checks signature is complete, configures CrossChainClause state,
         // sends CCIP message, and marks the instance as SENT
-        uint256 fee = adapterA.getFee(
-            ESCROW_INSTANCE,
-            chainSelector,
-            address(agreementB)
-        );
+        uint256 fee = adapterA.getFee(ESCROW_INSTANCE, chainSelector, address(agreementB));
         vm.deal(address(agreementA), fee + 1 ether);
 
         // Agreement A calls adapter.sendReleaseOnSignature() via delegatecall
         agreementA.triggerCrossChainRelease{value: fee}(
-            SIG_INSTANCE,
-            CROSSCHAIN_INSTANCE_A,
-            ESCROW_INSTANCE,
-            chainSelector,
-            address(agreementB)
+            SIG_INSTANCE, CROSSCHAIN_INSTANCE_A, ESCROW_INSTANCE, chainSelector, address(agreementB)
         );
 
         // Step 5: Verify cross-chain clause state on Chain A (source)
@@ -254,11 +225,7 @@ contract CrossChainSignatureToEscrowTest is Test {
 
         // Get fee
         uint256 fee = controllerA.getFee(
-            chainSelector,
-            address(agreementB),
-            keccak256("document"),
-            2,
-            abi.encode(ESCROW_INSTANCE)
+            chainSelector, address(agreementB), keccak256("document"), 2, abi.encode(ESCROW_INSTANCE)
         );
 
         // Try to send cross-chain release (will fail on destination because escrow not funded)
@@ -268,11 +235,7 @@ contract CrossChainSignatureToEscrowTest is Test {
         // it should revert if the destination reverts
         vm.expectRevert(); // Expect revert because escrow is not in FUNDED state
         controllerA.sendMessage{value: fee}(
-            chainSelector,
-            address(agreementB),
-            keccak256("document"),
-            2,
-            abi.encode(ESCROW_INSTANCE)
+            chainSelector, address(agreementB), keccak256("document"), 2, abi.encode(ESCROW_INSTANCE)
         );
     }
 
@@ -280,27 +243,14 @@ contract CrossChainSignatureToEscrowTest is Test {
         address unauthorized = makeAddr("unauthorized");
 
         uint256 fee = controllerA.getFee(
-            chainSelector,
-            address(agreementB),
-            keccak256("document"),
-            2,
-            abi.encode(ESCROW_INSTANCE)
+            chainSelector, address(agreementB), keccak256("document"), 2, abi.encode(ESCROW_INSTANCE)
         );
 
         vm.deal(unauthorized, 10 ether);
         vm.prank(unauthorized);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                CrossChainControllerV3.NotAuthorizedAgreement.selector,
-                unauthorized
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(CrossChainControllerV3.NotAuthorizedAgreement.selector, unauthorized));
         controllerA.sendMessage{value: fee}(
-            chainSelector,
-            address(agreementB),
-            keccak256("document"),
-            2,
-            abi.encode(ESCROW_INSTANCE)
+            chainSelector, address(agreementB), keccak256("document"), 2, abi.encode(ESCROW_INSTANCE)
         );
     }
 
@@ -360,23 +310,14 @@ contract MockAgreementA {
     CrossChainControllerV3 public controller;
     SignatureEscrowCrossChainAdapter public adapter;
 
-    constructor(
-        address _signatureClause,
-        address _crossChainClause,
-        address _controller,
-        address _adapter
-    ) {
+    constructor(address _signatureClause, address _crossChainClause, address _controller, address _adapter) {
         signatureClause = SignatureClauseLogicV3(_signatureClause);
         crossChainClause = CrossChainClauseLogicV3(_crossChainClause);
         controller = CrossChainControllerV3(payable(_controller));
         adapter = SignatureEscrowCrossChainAdapter(_adapter);
     }
 
-    function setupSignature(
-        bytes32 instanceId,
-        address[] calldata signers,
-        bytes32 documentHash
-    ) external {
+    function setupSignature(bytes32 instanceId, address[] calldata signers, bytes32 documentHash) external {
         (bool success,) = address(signatureClause).delegatecall(
             abi.encodeCall(SignatureClauseLogicV3.intakeSigners, (instanceId, signers))
         );
@@ -396,18 +337,16 @@ contract MockAgreementA {
     }
 
     function querySignatureStatus(bytes32 instanceId) external returns (uint16) {
-        (bool success, bytes memory data) = address(signatureClause).delegatecall(
-            abi.encodeCall(SignatureClauseLogicV3.queryStatus, (instanceId))
-        );
+        (bool success, bytes memory data) =
+            address(signatureClause).delegatecall(abi.encodeCall(SignatureClauseLogicV3.queryStatus, (instanceId)));
         require(success, "queryStatus failed");
         return abi.decode(data, (uint16));
     }
 
     /// @notice Query cross-chain clause status via delegatecall
     function queryCrossChainStatus(bytes32 instanceId) external returns (uint16) {
-        (bool success, bytes memory data) = address(crossChainClause).delegatecall(
-            abi.encodeCall(CrossChainClauseLogicV3.queryStatus, (instanceId))
-        );
+        (bool success, bytes memory data) =
+            address(crossChainClause).delegatecall(abi.encodeCall(CrossChainClauseLogicV3.queryStatus, (instanceId)));
         require(success, "queryStatus failed");
         return abi.decode(data, (uint16));
     }
@@ -456,25 +395,16 @@ contract MockAgreementB is ICrossChainReceiver {
     // In production, this would be derived from the message or tracked differently
     bytes32 constant CROSSCHAIN_INSTANCE_B = keccak256("crosschain-instance-b");
 
-    constructor(
-        address _escrowClause,
-        address _crossChainClause,
-        address _controller,
-        address _adapter
-    ) {
+    constructor(address _escrowClause, address _crossChainClause, address _controller, address _adapter) {
         escrowClause = EscrowClauseLogicV3(_escrowClause);
         crossChainClause = CrossChainClauseLogicV3(_crossChainClause);
         controller = CrossChainControllerV3(payable(_controller));
         adapter = SignatureEscrowCrossChainAdapter(_adapter);
     }
 
-    function setupEscrow(
-        bytes32 instanceId,
-        address depositor,
-        address beneficiary,
-        address token,
-        uint256 amount
-    ) external {
+    function setupEscrow(bytes32 instanceId, address depositor, address beneficiary, address token, uint256 amount)
+        external
+    {
         // Use delegatecall so storage is in this contract
         (bool success,) = address(escrowClause).delegatecall(
             abi.encodeCall(EscrowClauseLogicV3.intakeDepositor, (instanceId, depositor))
@@ -486,43 +416,36 @@ contract MockAgreementB is ICrossChainReceiver {
         );
         require(success, "intakeBeneficiary failed");
 
-        (success,) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.intakeToken, (instanceId, token))
-        );
+        (success,) =
+            address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.intakeToken, (instanceId, token)));
         require(success, "intakeToken failed");
 
-        (success,) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.intakeAmount, (instanceId, amount))
-        );
+        (success,) =
+            address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.intakeAmount, (instanceId, amount)));
         require(success, "intakeAmount failed");
 
-        (success,) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.intakeReady, (instanceId))
-        );
+        (success,) = address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.intakeReady, (instanceId)));
         require(success, "intakeReady failed");
     }
 
     function fundEscrow(bytes32 instanceId) external payable {
         // Use delegatecall so msg.sender (the depositor) is preserved
-        (bool success,) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.actionDeposit, (instanceId))
-        );
+        (bool success,) =
+            address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.actionDeposit, (instanceId)));
         require(success, "actionDeposit failed");
     }
 
     function queryEscrowStatus(bytes32 instanceId) external returns (uint16) {
-        (bool success, bytes memory data) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.queryStatus, (instanceId))
-        );
+        (bool success, bytes memory data) =
+            address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.queryStatus, (instanceId)));
         require(success, "queryStatus failed");
         return abi.decode(data, (uint16));
     }
 
     /// @notice Query cross-chain clause status via delegatecall
     function queryCrossChainStatus(bytes32 instanceId) external returns (uint16) {
-        (bool success, bytes memory data) = address(crossChainClause).delegatecall(
-            abi.encodeCall(CrossChainClauseLogicV3.queryStatus, (instanceId))
-        );
+        (bool success, bytes memory data) =
+            address(crossChainClause).delegatecall(abi.encodeCall(CrossChainClauseLogicV3.queryStatus, (instanceId)));
         require(success, "queryStatus failed");
         return abi.decode(data, (uint16));
     }

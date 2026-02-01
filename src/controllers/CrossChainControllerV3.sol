@@ -158,11 +158,7 @@ contract CrossChainControllerV3 is CCIPReceiver, Ownable {
     /// @param chainSelector The source chain selector
     /// @param sourceAgreement The source agreement address
     /// @param allowed Whether the source is allowed
-    function setAllowedSource(
-        uint64 chainSelector,
-        address sourceAgreement,
-        bool allowed
-    ) external onlyOwner {
+    function setAllowedSource(uint64 chainSelector, address sourceAgreement, bool allowed) external onlyOwner {
         allowedSources[chainSelector][sourceAgreement] = allowed;
         emit SourceAllowanceSet(chainSelector, sourceAgreement, allowed);
     }
@@ -192,12 +188,7 @@ contract CrossChainControllerV3 is CCIPReceiver, Ownable {
         bytes calldata extraData
     ) external payable returns (bytes32 messageId) {
         return sendMessageWithFeeToken(
-            destinationChainSelector,
-            destinationAgreement,
-            contentHash,
-            action,
-            extraData,
-            address(0)
+            destinationChainSelector, destinationAgreement, contentHash, action, extraData, address(0)
         );
     }
 
@@ -251,9 +242,7 @@ contract CrossChainControllerV3 is CCIPReceiver, Ownable {
             receiver: abi.encode(partnerController),
             data: abi.encode(payload),
             tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: Client._argsToBytes(
-                Client.EVMExtraArgsV1({gasLimit: defaultGasLimit})
-            ),
+            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: defaultGasLimit})),
             feeToken: feeToken
         });
 
@@ -279,12 +268,7 @@ contract CrossChainControllerV3 is CCIPReceiver, Ownable {
         }
 
         emit CrossChainMessageSent(
-            messageId,
-            destinationChainSelector,
-            msg.sender,
-            destinationAgreement,
-            contentHash,
-            action
+            messageId, destinationChainSelector, msg.sender, destinationAgreement, contentHash, action
         );
     }
 
@@ -302,14 +286,8 @@ contract CrossChainControllerV3 is CCIPReceiver, Ownable {
         uint8 action,
         bytes calldata extraData
     ) external view returns (uint256 fee) {
-        return getFeeWithToken(
-            destinationChainSelector,
-            destinationAgreement,
-            contentHash,
-            action,
-            extraData,
-            address(0)
-        );
+        return
+            getFeeWithToken(destinationChainSelector, destinationAgreement, contentHash, action, extraData, address(0));
     }
 
     /// @notice Get the fee required to send a cross-chain message with specific fee token
@@ -343,9 +321,7 @@ contract CrossChainControllerV3 is CCIPReceiver, Ownable {
             receiver: abi.encode(partnerController),
             data: abi.encode(payload),
             tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: Client._argsToBytes(
-                Client.EVMExtraArgsV1({gasLimit: defaultGasLimit})
-            ),
+            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: defaultGasLimit})),
             feeToken: feeToken
         });
 
@@ -359,9 +335,7 @@ contract CrossChainControllerV3 is CCIPReceiver, Ownable {
 
     /// @notice Handle incoming CCIP message
     /// @dev Called by the CCIP router
-    function _ccipReceive(
-        Client.Any2EVMMessage memory message
-    ) internal override {
+    function _ccipReceive(Client.Any2EVMMessage memory message) internal override {
         uint64 sourceChainSelector = message.sourceChainSelector;
 
         // Decode payload
@@ -383,11 +357,7 @@ contract CrossChainControllerV3 is CCIPReceiver, Ownable {
 
         // Forward to destination agreement
         ICrossChainReceiver(payload.destinationAgreement).receiveCrossChainMessage(
-            sourceChainSelector,
-            payload.sourceAgreement,
-            payload.contentHash,
-            payload.action,
-            payload.extraData
+            sourceChainSelector, payload.sourceAgreement, payload.contentHash, payload.action, payload.extraData
         );
     }
 

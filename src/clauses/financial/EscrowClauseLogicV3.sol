@@ -73,18 +73,20 @@ contract EscrowClauseLogicV3 is ClauseBase {
 
     /// @notice How cancellation fees are calculated
     enum FeeType {
-        NONE,      // 0 - Full refund to depositor (no fee to beneficiary)
-        FIXED,     // 1 - Fixed amount to beneficiary, rest to depositor
-        BPS,       // 2 - Percentage to beneficiary (basis points, 10000 = 100%)
-        PRORATED   // 3 - Based on time elapsed since proration start date
+        NONE, // 0 - Full refund to depositor (no fee to beneficiary)
+        FIXED, // 1 - Fixed amount to beneficiary, rest to depositor
+        BPS, // 2 - Percentage to beneficiary (basis points, 10000 = 100%)
+        PRORATED // 3 - Based on time elapsed since proration start date
+
     }
 
     /// @notice Who is authorized to initiate cancellation
     enum CancellableBy {
-        NONE,        // 0 - Nobody can cancel (cancellation disabled)
-        DEPOSITOR,   // 1 - Only depositor can cancel
+        NONE, // 0 - Nobody can cancel (cancellation disabled)
+        DEPOSITOR, // 1 - Only depositor can cancel
         BENEFICIARY, // 2 - Only beneficiary can cancel
-        EITHER       // 3 - Either party can cancel
+        EITHER // 3 - Either party can cancel
+
     }
 
     // =============================================================
@@ -93,11 +95,11 @@ contract EscrowClauseLogicV3 is ClauseBase {
 
     // Note: PENDING (0x0002), COMPLETE (0x0004), CANCELLED (0x0008) from ClauseBase
     // We define escrow-specific states:
-    uint16 internal constant FUNDED = 1 << 2;            // 0x0004 (same position as COMPLETE)
-    uint16 internal constant RELEASED = 1 << 3;          // 0x0008
-    uint16 internal constant REFUNDED = 1 << 4;          // 0x0010
-    uint16 internal constant CANCEL_PENDING = 1 << 5;    // 0x0020 - notice period active
-    uint16 internal constant CANCEL_EXECUTED = 1 << 6;   // 0x0040 - cancellation executed
+    uint16 internal constant FUNDED = 1 << 2; // 0x0004 (same position as COMPLETE)
+    uint16 internal constant RELEASED = 1 << 3; // 0x0008
+    uint16 internal constant REFUNDED = 1 << 4; // 0x0010
+    uint16 internal constant CANCEL_PENDING = 1 << 5; // 0x0020 - notice period active
+    uint16 internal constant CANCEL_EXECUTED = 1 << 6; // 0x0040 - cancellation executed
 
     // =============================================================
     // ERRORS
@@ -123,44 +125,19 @@ contract EscrowClauseLogicV3 is ClauseBase {
     // =============================================================
 
     event EscrowConfigured(
-        bytes32 indexed instanceId,
-        address indexed depositor,
-        address indexed beneficiary,
-        address token
+        bytes32 indexed instanceId, address indexed depositor, address indexed beneficiary, address token
     );
 
-    event EscrowFunded(
-        bytes32 indexed instanceId,
-        address indexed depositor,
-        address token,
-        uint256 amount
-    );
+    event EscrowFunded(bytes32 indexed instanceId, address indexed depositor, address token, uint256 amount);
 
-    event EscrowReleased(
-        bytes32 indexed instanceId,
-        address indexed beneficiary,
-        address token,
-        uint256 amount
-    );
+    event EscrowReleased(bytes32 indexed instanceId, address indexed beneficiary, address token, uint256 amount);
 
-    event EscrowRefunded(
-        bytes32 indexed instanceId,
-        address indexed depositor,
-        address token,
-        uint256 amount
-    );
+    event EscrowRefunded(bytes32 indexed instanceId, address indexed depositor, address token, uint256 amount);
 
-    event CancellationInitiated(
-        bytes32 indexed instanceId,
-        address indexed initiatedBy,
-        uint256 noticeEndsAt
-    );
+    event CancellationInitiated(bytes32 indexed instanceId, address indexed initiatedBy, uint256 noticeEndsAt);
 
     event EscrowCancelled(
-        bytes32 indexed instanceId,
-        address indexed cancelledBy,
-        uint256 toBeneficiary,
-        uint256 toDepositor
+        bytes32 indexed instanceId, address indexed cancelledBy, uint256 toBeneficiary, uint256 toDepositor
     );
 
     // =============================================================
@@ -181,7 +158,6 @@ contract EscrowClauseLogicV3 is ClauseBase {
         mapping(bytes32 => uint256) amount;
         /// @notice instanceId => timestamp when funded
         mapping(bytes32 => uint256) fundedAt;
-
         // ============ Cancellation Policy Configuration ============
         /// @notice instanceId => whether cancellation is enabled
         mapping(bytes32 => bool) cancellationEnabled;
@@ -197,7 +173,6 @@ contract EscrowClauseLogicV3 is ClauseBase {
         mapping(bytes32 => uint256) prorationStartDate;
         /// @notice instanceId => proration duration in seconds (for PRORATED fee type)
         mapping(bytes32 => uint256) prorationDuration;
-
         // ============ Cancellation State ============
         /// @notice instanceId => timestamp when cancellation was initiated
         mapping(bytes32 => uint256) cancellationInitiatedAt;
@@ -206,8 +181,7 @@ contract EscrowClauseLogicV3 is ClauseBase {
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.clause.escrow.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant STORAGE_SLOT =
-        0xba5260908d84ea3d59c0d07001243bfdfa609ca3585b936064d1e40950544d00;
+    bytes32 private constant STORAGE_SLOT = 0xba5260908d84ea3d59c0d07001243bfdfa609ca3585b936064d1e40950544d00;
 
     function _getStorage() internal pure returns (EscrowStorage storage $) {
         assembly {
@@ -341,12 +315,7 @@ contract EscrowClauseLogicV3 is ClauseBase {
 
         $.status[instanceId] = PENDING;
 
-        emit EscrowConfigured(
-            instanceId,
-            $.depositor[instanceId],
-            $.beneficiary[instanceId],
-            $.token[instanceId]
-        );
+        emit EscrowConfigured(instanceId, $.depositor[instanceId], $.beneficiary[instanceId], $.token[instanceId]);
     }
 
     // =============================================================
@@ -403,12 +372,7 @@ contract EscrowClauseLogicV3 is ClauseBase {
         $.fundedAt[instanceId] = block.timestamp;
         $.status[instanceId] = FUNDED;
 
-        emit EscrowFunded(
-            instanceId,
-            $.depositor[instanceId],
-            $.token[instanceId],
-            $.amount[instanceId]
-        );
+        emit EscrowFunded(instanceId, $.depositor[instanceId], $.token[instanceId], $.amount[instanceId]);
     }
 
     /// @notice Release funds to beneficiary
@@ -485,11 +449,7 @@ contract EscrowClauseLogicV3 is ClauseBase {
             $.cancellationInitiatedAt[instanceId] = block.timestamp;
             $.cancellationInitiatedBy[instanceId] = msg.sender;
 
-            emit CancellationInitiated(
-                instanceId,
-                msg.sender,
-                block.timestamp + noticePeriod
-            );
+            emit CancellationInitiated(instanceId, msg.sender, block.timestamp + noticePeriod);
         }
     }
 
@@ -567,7 +527,11 @@ contract EscrowClauseLogicV3 is ClauseBase {
     /// @return toBeneficiary Amount sent to beneficiary
     /// @return toDepositor Amount sent to depositor
     /// @dev Only available after CANCELLED state
-    function handoffCancellationSplit(bytes32 instanceId) external view returns (uint256 toBeneficiary, uint256 toDepositor) {
+    function handoffCancellationSplit(bytes32 instanceId)
+        external
+        view
+        returns (uint256 toBeneficiary, uint256 toDepositor)
+    {
         EscrowStorage storage $ = _getStorage();
         require($.status[instanceId] == CANCEL_EXECUTED, "Wrong state");
         return _calculateSplit(instanceId);
@@ -735,7 +699,11 @@ contract EscrowClauseLogicV3 is ClauseBase {
     /// @return toBeneficiary Amount that would go to beneficiary
     /// @return toDepositor Amount that would go to depositor
     /// @dev Can be called even before cancellation to preview the split
-    function queryCancellationSplit(bytes32 instanceId) external view returns (uint256 toBeneficiary, uint256 toDepositor) {
+    function queryCancellationSplit(bytes32 instanceId)
+        external
+        view
+        returns (uint256 toBeneficiary, uint256 toDepositor)
+    {
         return _calculateSplit(instanceId);
     }
 
@@ -783,11 +751,11 @@ contract EscrowClauseLogicV3 is ClauseBase {
     /// @param caller Address attempting to cancel
     /// @param policy Who is authorized to cancel
     /// @return True if caller is authorized
-    function _isAuthorizedToCancel(
-        bytes32 instanceId,
-        address caller,
-        CancellableBy policy
-    ) internal view returns (bool) {
+    function _isAuthorizedToCancel(bytes32 instanceId, address caller, CancellableBy policy)
+        internal
+        view
+        returns (bool)
+    {
         if (policy == CancellableBy.NONE) {
             return false;
         }

@@ -8,7 +8,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 /// @title Mock ERC20 token for testing
 contract MockERC20 is ERC20 {
     constructor() ERC20("Mock Token", "MOCK") {
-        _mint(msg.sender, 1_000_000 * 10**18);
+        _mint(msg.sender, 1_000_000 * 10 ** 18);
     }
 
     function mint(address to, uint256 amount) external {
@@ -21,7 +21,6 @@ contract MockERC20 is ERC20 {
  * @notice Comprehensive tests for StreamingClauseLogicV3
  */
 contract StreamingClauseLogicV3Test is Test {
-
     StreamingClauseLogicV3 public streaming;
     MockERC20 public token;
 
@@ -30,10 +29,10 @@ contract StreamingClauseLogicV3Test is Test {
     address charlie;
 
     // State constants (matching the contract)
-    uint16 constant PENDING = 1 << 1;      // 0x0002
-    uint16 constant STREAMING_STATE = 1 << 2;  // 0x0004
-    uint16 constant COMPLETED = 1 << 3;    // 0x0008
-    uint16 constant STREAM_CANCELLED = 1 << 4;  // 0x0010
+    uint16 constant PENDING = 1 << 1; // 0x0002
+    uint16 constant STREAMING_STATE = 1 << 2; // 0x0004
+    uint16 constant COMPLETED = 1 << 3; // 0x0008
+    uint16 constant STREAM_CANCELLED = 1 << 4; // 0x0010
 
     function setUp() public {
         streaming = new StreamingClauseLogicV3();
@@ -49,7 +48,7 @@ contract StreamingClauseLogicV3Test is Test {
         vm.deal(charlie, 100 ether);
 
         // Give alice some tokens
-        token.mint(alice, 1000 * 10**18);
+        token.mint(alice, 1000 * 10 ** 18);
     }
 
     // Allow test contract to receive ETH
@@ -264,11 +263,7 @@ contract StreamingClauseLogicV3Test is Test {
 
         vm.prank(alice);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                StreamingClauseLogicV3.InsufficientDeposit.selector,
-                requiredDeposit,
-                sentAmount
-            )
+            abi.encodeWithSelector(StreamingClauseLogicV3.InsufficientDeposit.selector, requiredDeposit, sentAmount)
         );
         streaming.actionDeposit{value: sentAmount}(instanceId);
     }
@@ -279,13 +274,7 @@ contract StreamingClauseLogicV3Test is Test {
         _configureStream(instanceId, alice, bob, address(0), 10 ether, 1 ether);
 
         vm.prank(charlie);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                StreamingClauseLogicV3.NotSender.selector,
-                charlie,
-                alice
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(StreamingClauseLogicV3.NotSender.selector, charlie, alice));
         streaming.actionDeposit{value: 10 ether}(instanceId);
     }
 
@@ -295,9 +284,9 @@ contract StreamingClauseLogicV3Test is Test {
 
     function test_ActionDeposit_ERC20_Success() public {
         bytes32 instanceId = keccak256("erc20-deposit-1");
-        uint256 deposit = 100 * 10**18;
+        uint256 deposit = 100 * 10 ** 18;
 
-        _configureStream(instanceId, alice, bob, address(token), deposit, 1 * 10**18);
+        _configureStream(instanceId, alice, bob, address(token), deposit, 1 * 10 ** 18);
 
         vm.prank(alice);
         token.approve(address(streaming), deposit);
@@ -315,9 +304,9 @@ contract StreamingClauseLogicV3Test is Test {
 
     function test_ActionDeposit_ERC20_RevertsIfNotApproved() public {
         bytes32 instanceId = keccak256("erc20-deposit-2");
-        uint256 deposit = 100 * 10**18;
+        uint256 deposit = 100 * 10 ** 18;
 
-        _configureStream(instanceId, alice, bob, address(token), deposit, 1 * 10**18);
+        _configureStream(instanceId, alice, bob, address(token), deposit, 1 * 10 ** 18);
 
         vm.prank(alice);
         vm.expectRevert();
@@ -391,13 +380,7 @@ contract StreamingClauseLogicV3Test is Test {
         vm.warp(block.timestamp + 5);
 
         vm.prank(charlie);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                StreamingClauseLogicV3.NotRecipient.selector,
-                charlie,
-                bob
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(StreamingClauseLogicV3.NotRecipient.selector, charlie, bob));
         streaming.actionClaim(instanceId, 0);
     }
 
@@ -421,13 +404,7 @@ contract StreamingClauseLogicV3Test is Test {
         vm.warp(block.timestamp + 5); // 5 ETH available
 
         vm.prank(bob);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                StreamingClauseLogicV3.InsufficientAvailable.selector,
-                8 ether,
-                5 ether
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(StreamingClauseLogicV3.InsufficientAvailable.selector, 8 ether, 5 ether));
         streaming.actionClaim(instanceId, 8 ether);
     }
 
@@ -505,12 +482,7 @@ contract StreamingClauseLogicV3Test is Test {
         _configureAndDepositStream(instanceId, alice, bob, address(0), 10 ether, 1 ether);
 
         vm.prank(charlie);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                StreamingClauseLogicV3.NotSenderOrRecipient.selector,
-                charlie
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(StreamingClauseLogicV3.NotSenderOrRecipient.selector, charlie));
         streaming.actionCancel(instanceId);
     }
 
@@ -674,13 +646,8 @@ contract StreamingClauseLogicV3Test is Test {
 
         vm.warp(block.timestamp + 5);
 
-        (
-            uint16 status,
-            uint256 streamed,
-            uint256 available,
-            uint256 withdrawn,
-            uint256 remaining
-        ) = streaming.queryStreamState(instanceId);
+        (uint16 status, uint256 streamed, uint256 available, uint256 withdrawn, uint256 remaining) =
+            streaming.queryStreamState(instanceId);
 
         assertEq(status, STREAMING_STATE);
         assertEq(streamed, 5 ether);
@@ -779,8 +746,8 @@ contract StreamingClauseLogicV3Test is Test {
 
     function test_ERC20_FullFlow() public {
         bytes32 instanceId = keccak256("erc20-flow");
-        uint256 deposit = 100 * 10**18;
-        uint256 ratePerSecond = 10 * 10**18; // 10 tokens per second
+        uint256 deposit = 100 * 10 ** 18;
+        uint256 ratePerSecond = 10 * 10 ** 18; // 10 tokens per second
 
         _configureStream(instanceId, alice, bob, address(token), deposit, ratePerSecond);
 
@@ -798,18 +765,14 @@ contract StreamingClauseLogicV3Test is Test {
         vm.prank(bob);
         streaming.actionClaim(instanceId, 0);
 
-        assertEq(token.balanceOf(bob), bobBalanceBefore + 50 * 10**18);
+        assertEq(token.balanceOf(bob), bobBalanceBefore + 50 * 10 ** 18);
     }
 
     // =============================================================
     // FUZZ TESTS
     // =============================================================
 
-    function testFuzz_StreamCalculation(
-        uint256 deposit,
-        uint256 ratePerSecond,
-        uint256 elapsed
-    ) public {
+    function testFuzz_StreamCalculation(uint256 deposit, uint256 ratePerSecond, uint256 elapsed) public {
         deposit = bound(deposit, 1 ether, 100 ether);
         ratePerSecond = bound(ratePerSecond, 0.01 ether, deposit); // Ensure rate doesn't exceed deposit
         elapsed = bound(elapsed, 0, 365 days);
@@ -835,11 +798,7 @@ contract StreamingClauseLogicV3Test is Test {
         assertEq(streamed + remaining, deposit, "Streamed + remaining should equal deposit");
     }
 
-    function testFuzz_ClaimConservesTotal(
-        uint256 deposit,
-        uint256 claimAmount,
-        uint256 elapsed
-    ) public {
+    function testFuzz_ClaimConservesTotal(uint256 deposit, uint256 claimAmount, uint256 elapsed) public {
         deposit = bound(deposit, 1 ether, 100 ether);
         elapsed = bound(elapsed, 1, deposit); // At least 1 second, max deposit seconds
 
@@ -869,10 +828,7 @@ contract StreamingClauseLogicV3Test is Test {
         }
     }
 
-    function testFuzz_CancelConservesTotal(
-        uint256 deposit,
-        uint256 elapsed
-    ) public {
+    function testFuzz_CancelConservesTotal(uint256 deposit, uint256 elapsed) public {
         deposit = bound(deposit, 1 ether, 100 ether);
         elapsed = bound(elapsed, 0, deposit - 1); // Must cancel before stream finishes
 

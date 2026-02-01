@@ -67,8 +67,8 @@ contract MilestoneClauseLogicV3 is ClauseBase {
     // =============================================================
 
     // Note: PENDING (0x0002), COMPLETE (0x0004), CANCELLED (0x0008) from ClauseBase
-    uint16 internal constant ACTIVE = 1 << 4;    // 0x0010
-    uint16 internal constant DISPUTED = 1 << 5;  // 0x0020
+    uint16 internal constant ACTIVE = 1 << 4; // 0x0010
+    uint16 internal constant DISPUTED = 1 << 5; // 0x0020
 
     // =============================================================
     // MILESTONE STATES (per-milestone, not bitmask)
@@ -103,10 +103,7 @@ contract MilestoneClauseLogicV3 is ClauseBase {
     // =============================================================
 
     event MilestoneAdded(
-        bytes32 indexed instanceId,
-        uint256 indexed milestoneIndex,
-        bytes32 descriptionHash,
-        uint256 amount
+        bytes32 indexed instanceId, uint256 indexed milestoneIndex, bytes32 descriptionHash, uint256 amount
     );
 
     event MilestoneConfigured(
@@ -117,49 +114,25 @@ contract MilestoneClauseLogicV3 is ClauseBase {
         uint256 milestoneCount
     );
 
-    event MilestoneEscrowLinked(
-        bytes32 indexed instanceId,
-        uint256 indexed milestoneIndex,
-        bytes32 escrowInstanceId
-    );
+    event MilestoneEscrowLinked(bytes32 indexed instanceId, uint256 indexed milestoneIndex, bytes32 escrowInstanceId);
 
     event MilestoneActivated(bytes32 indexed instanceId);
 
-    event MilestoneRequested(
-        bytes32 indexed instanceId,
-        uint256 indexed milestoneIndex,
-        address indexed beneficiary
-    );
+    event MilestoneRequested(bytes32 indexed instanceId, uint256 indexed milestoneIndex, address indexed beneficiary);
 
-    event MilestoneConfirmed(
-        bytes32 indexed instanceId,
-        uint256 indexed milestoneIndex,
-        address indexed client
-    );
+    event MilestoneConfirmed(bytes32 indexed instanceId, uint256 indexed milestoneIndex, address indexed client);
 
     event MilestoneDisputed(
-        bytes32 indexed instanceId,
-        uint256 indexed milestoneIndex,
-        address indexed disputer,
-        bytes32 reasonHash
+        bytes32 indexed instanceId, uint256 indexed milestoneIndex, address indexed disputer, bytes32 reasonHash
     );
 
     event MilestoneRejectedForRevision(
-        bytes32 indexed instanceId,
-        uint256 indexed milestoneIndex,
-        address indexed client,
-        bytes32 reasonHash
+        bytes32 indexed instanceId, uint256 indexed milestoneIndex, address indexed client, bytes32 reasonHash
     );
 
-    event MilestoneReleased(
-        bytes32 indexed instanceId,
-        uint256 indexed milestoneIndex
-    );
+    event MilestoneReleased(bytes32 indexed instanceId, uint256 indexed milestoneIndex);
 
-    event MilestoneRefunded(
-        bytes32 indexed instanceId,
-        uint256 indexed milestoneIndex
-    );
+    event MilestoneRefunded(bytes32 indexed instanceId, uint256 indexed milestoneIndex);
 
     event MilestoneCancelled(bytes32 indexed instanceId);
 
@@ -171,12 +144,12 @@ contract MilestoneClauseLogicV3 is ClauseBase {
 
     /// @notice Individual milestone data
     struct Milestone {
-        bytes32 descriptionHash;   // Hash of milestone description (off-chain content)
-        uint256 amount;            // Amount for this milestone
-        bytes32 escrowInstanceId;  // Linked escrow instance
-        uint8 status;              // Per-milestone status
-        uint256 confirmedAt;       // Timestamp when confirmed (0 if not)
-        uint256 releasedAt;        // Timestamp when released (0 if not)
+        bytes32 descriptionHash; // Hash of milestone description (off-chain content)
+        uint256 amount; // Amount for this milestone
+        bytes32 escrowInstanceId; // Linked escrow instance
+        uint8 status; // Per-milestone status
+        uint256 confirmedAt; // Timestamp when confirmed (0 if not)
+        uint256 releasedAt; // Timestamp when released (0 if not)
     }
 
     // =============================================================
@@ -204,8 +177,7 @@ contract MilestoneClauseLogicV3 is ClauseBase {
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.clause.milestone.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant STORAGE_SLOT =
-        0xd1fa2eb20138c5e640790d1c85f543f18433228b10feda9cc53b499d48509d00;
+    bytes32 private constant STORAGE_SLOT = 0xd1fa2eb20138c5e640790d1c85f543f18433228b10feda9cc53b499d48509d00;
 
     function _getStorage() internal pure returns (MilestoneStorage storage $) {
         assembly {
@@ -221,11 +193,7 @@ contract MilestoneClauseLogicV3 is ClauseBase {
     /// @param instanceId Unique identifier for this milestone instance
     /// @param descriptionHash Hash of the milestone description (e.g., IPFS CID hash)
     /// @param amount Amount to be released for this milestone
-    function intakeMilestone(
-        bytes32 instanceId,
-        bytes32 descriptionHash,
-        uint256 amount
-    ) external {
+    function intakeMilestone(bytes32 instanceId, bytes32 descriptionHash, uint256 amount) external {
         if (amount == 0) revert ZeroAmount();
 
         MilestoneStorage storage $ = _getStorage();
@@ -281,11 +249,7 @@ contract MilestoneClauseLogicV3 is ClauseBase {
     /// @param milestoneIndex Index of the milestone to link
     /// @param escrowInstanceId The escrow instance ID to link
     /// @dev Can be called in uninitialized or PENDING state
-    function intakeMilestoneEscrowId(
-        bytes32 instanceId,
-        uint256 milestoneIndex,
-        bytes32 escrowInstanceId
-    ) external {
+    function intakeMilestoneEscrowId(bytes32 instanceId, uint256 milestoneIndex, bytes32 escrowInstanceId) external {
         MilestoneStorage storage $ = _getStorage();
         uint16 status = $.status[instanceId];
         require(status == 0 || status == PENDING, "Wrong state");
@@ -317,11 +281,7 @@ contract MilestoneClauseLogicV3 is ClauseBase {
         $.status[instanceId] = PENDING;
 
         emit MilestoneConfigured(
-            instanceId,
-            $.beneficiary[instanceId],
-            $.client[instanceId],
-            $.token[instanceId],
-            count
+            instanceId, $.beneficiary[instanceId], $.client[instanceId], $.token[instanceId], count
         );
     }
 
@@ -489,9 +449,7 @@ contract MilestoneClauseLogicV3 is ClauseBase {
 
         Milestone storage m = $.milestones[instanceId][milestoneIndex];
         // Can refund from PENDING, REQUESTED, or DISPUTED states
-        if (m.status != MILESTONE_PENDING &&
-            m.status != MILESTONE_REQUESTED &&
-            m.status != MILESTONE_DISPUTED) {
+        if (m.status != MILESTONE_PENDING && m.status != MILESTONE_REQUESTED && m.status != MILESTONE_DISPUTED) {
             revert WrongMilestoneState(MILESTONE_PENDING, m.status);
         }
 
@@ -505,11 +463,7 @@ contract MilestoneClauseLogicV3 is ClauseBase {
     /// @param milestoneIndex Index of the milestone to dispute
     /// @param reasonHash Hash of the dispute reason (off-chain content)
     /// @custom:papre-style destructive
-    function actionDispute(
-        bytes32 instanceId,
-        uint256 milestoneIndex,
-        bytes32 reasonHash
-    ) external {
+    function actionDispute(bytes32 instanceId, uint256 milestoneIndex, bytes32 reasonHash) external {
         MilestoneStorage storage $ = _getStorage();
         uint16 status = $.status[instanceId];
         // Can dispute from ACTIVE or DISPUTED state (multiple milestones can be disputed)
@@ -545,11 +499,7 @@ contract MilestoneClauseLogicV3 is ClauseBase {
     ///      so the contractor can resubmit. This does NOT trigger dispute status.
     ///      Use actionDispute for serious disputes requiring arbitration.
     /// @custom:papre-style secondary
-    function actionRejectAndReset(
-        bytes32 instanceId,
-        uint256 milestoneIndex,
-        bytes32 reasonHash
-    ) external {
+    function actionRejectAndReset(bytes32 instanceId, uint256 milestoneIndex, bytes32 reasonHash) external {
         MilestoneStorage storage $ = _getStorage();
         uint16 status = $.status[instanceId];
         // Can reject from ACTIVE or DISPUTED state (for non-disputed milestones)
@@ -579,11 +529,7 @@ contract MilestoneClauseLogicV3 is ClauseBase {
     /// @param milestoneIndex Index of the milestone to resolve
     /// @param releaseTobeneficiary True to release, false to refund
     /// @dev Called by Agreement after arbitration ruling
-    function actionResolveDispute(
-        bytes32 instanceId,
-        uint256 milestoneIndex,
-        bool releaseTobeneficiary
-    ) external {
+    function actionResolveDispute(bytes32 instanceId, uint256 milestoneIndex, bool releaseTobeneficiary) external {
         MilestoneStorage storage $ = _getStorage();
         require($.status[instanceId] == DISPUTED, "Wrong state");
 
@@ -661,10 +607,7 @@ contract MilestoneClauseLogicV3 is ClauseBase {
     /// @param instanceId Unique identifier for this milestone instance
     /// @param milestoneIndex Index of the milestone
     /// @return The escrow instance ID
-    function handoffMilestoneEscrowId(
-        bytes32 instanceId,
-        uint256 milestoneIndex
-    ) external view returns (bytes32) {
+    function handoffMilestoneEscrowId(bytes32 instanceId, uint256 milestoneIndex) external view returns (bytes32) {
         MilestoneStorage storage $ = _getStorage();
         // Available when milestone is confirmed (ready for release)
         Milestone storage m = $.milestones[instanceId][milestoneIndex];
@@ -720,37 +663,28 @@ contract MilestoneClauseLogicV3 is ClauseBase {
     /// @return status Per-milestone status
     /// @return confirmedAt Confirmation timestamp
     /// @return releasedAt Release timestamp
-    function queryMilestone(
-        bytes32 instanceId,
-        uint256 milestoneIndex
-    ) external view returns (
-        bytes32 descriptionHash,
-        uint256 amount,
-        bytes32 escrowInstanceId,
-        uint8 status,
-        uint256 confirmedAt,
-        uint256 releasedAt
-    ) {
+    function queryMilestone(bytes32 instanceId, uint256 milestoneIndex)
+        external
+        view
+        returns (
+            bytes32 descriptionHash,
+            uint256 amount,
+            bytes32 escrowInstanceId,
+            uint8 status,
+            uint256 confirmedAt,
+            uint256 releasedAt
+        )
+    {
         MilestoneStorage storage $ = _getStorage();
         Milestone storage m = $.milestones[instanceId][milestoneIndex];
-        return (
-            m.descriptionHash,
-            m.amount,
-            m.escrowInstanceId,
-            m.status,
-            m.confirmedAt,
-            m.releasedAt
-        );
+        return (m.descriptionHash, m.amount, m.escrowInstanceId, m.status, m.confirmedAt, m.releasedAt);
     }
 
     /// @notice Get the status of a specific milestone
     /// @param instanceId Unique identifier for this milestone instance
     /// @param milestoneIndex Index of the milestone
     /// @return Per-milestone status
-    function queryMilestoneStatus(
-        bytes32 instanceId,
-        uint256 milestoneIndex
-    ) external view returns (uint8) {
+    function queryMilestoneStatus(bytes32 instanceId, uint256 milestoneIndex) external view returns (uint8) {
         return _getStorage().milestones[instanceId][milestoneIndex].status;
     }
 
@@ -758,10 +692,7 @@ contract MilestoneClauseLogicV3 is ClauseBase {
     /// @param instanceId Unique identifier for this milestone instance
     /// @param milestoneIndex Index of the milestone
     /// @return The escrow instance ID
-    function queryMilestoneEscrowId(
-        bytes32 instanceId,
-        uint256 milestoneIndex
-    ) external view returns (bytes32) {
+    function queryMilestoneEscrowId(bytes32 instanceId, uint256 milestoneIndex) external view returns (bytes32) {
         return _getStorage().milestones[instanceId][milestoneIndex].escrowInstanceId;
     }
 
@@ -817,10 +748,7 @@ contract MilestoneClauseLogicV3 is ClauseBase {
     /// @param instanceId Unique identifier for this milestone instance
     /// @param milestoneIndex Index of the milestone
     /// @return True if milestone is in CONFIRMED state
-    function queryIsMilestoneReadyForRelease(
-        bytes32 instanceId,
-        uint256 milestoneIndex
-    ) external view returns (bool) {
+    function queryIsMilestoneReadyForRelease(bytes32 instanceId, uint256 milestoneIndex) external view returns (bool) {
         return _getStorage().milestones[instanceId][milestoneIndex].status == MILESTONE_CONFIRMED;
     }
 }

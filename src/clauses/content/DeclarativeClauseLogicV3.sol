@@ -20,15 +20,14 @@ import {ClauseBase} from "../../base/ClauseBase.sol";
 ///      0 (uninitialized) → REGISTERED → SEALED (terminal, handoff available)
 ///                                    → REVOKED (terminal, dead end)
 contract DeclarativeClauseLogicV3 is ClauseBase {
-
     // =============================================================
     // STATES (bitmask)
     // =============================================================
 
     // 0 = uninitialized (fresh storage)
-    uint16 internal constant REGISTERED = 1 << 1;  // 0x0002 - content registered
-    uint16 internal constant SEALED     = 1 << 2;  // 0x0004 - sealed, immutable
-    uint16 internal constant REVOKED    = 1 << 3;  // 0x0008 - revoked, invalid
+    uint16 internal constant REGISTERED = 1 << 1; // 0x0002 - content registered
+    uint16 internal constant SEALED = 1 << 2; // 0x0004 - sealed, immutable
+    uint16 internal constant REVOKED = 1 << 3; // 0x0008 - revoked, invalid
 
     // =============================================================
     // ERC-7201 NAMESPACED STORAGE
@@ -51,8 +50,7 @@ contract DeclarativeClauseLogicV3 is ClauseBase {
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.clause.declarative.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant STORAGE_SLOT =
-        0xcad4214cf727a181b2b5e7d17ad0f0fe8546d67a711bce09636dd570c35e8c00;
+    bytes32 private constant STORAGE_SLOT = 0xcad4214cf727a181b2b5e7d17ad0f0fe8546d67a711bce09636dd570c35e8c00;
 
     function _getStorage() internal pure returns (DeclarativeStorage storage $) {
         assembly {
@@ -68,11 +66,7 @@ contract DeclarativeClauseLogicV3 is ClauseBase {
     /// @param instanceId Unique identifier for this content instance
     /// @param contentHash The content's cryptographic hash (keccak256, IPFS CID digest)
     /// @param contentUri The content's URI (ipfs://, ar://, https://, or empty)
-    function intakeContent(
-        bytes32 instanceId,
-        bytes32 contentHash,
-        string calldata contentUri
-    ) external {
+    function intakeContent(bytes32 instanceId, bytes32 contentHash, string calldata contentUri) external {
         DeclarativeStorage storage $ = _getStorage();
         // Status 0 = fresh storage (uninitialized)
         require($.status[instanceId] == 0, "Wrong state");

@@ -8,7 +8,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 /// @title Mock ERC20 token for testing
 contract MockERC20 is ERC20 {
     constructor() ERC20("Mock Token", "MOCK") {
-        _mint(msg.sender, 1_000_000 * 10**18);
+        _mint(msg.sender, 1_000_000 * 10 ** 18);
     }
 
     function mint(address to, uint256 amount) external {
@@ -21,7 +21,6 @@ contract MockERC20 is ERC20 {
  * @notice Comprehensive tests for EscrowClauseLogicV3
  */
 contract EscrowClauseLogicV3Test is Test {
-
     EscrowClauseLogicV3 public escrow;
     MockERC20 public token;
 
@@ -30,10 +29,10 @@ contract EscrowClauseLogicV3Test is Test {
     address charlie;
 
     // State constants (matching the contract)
-    uint16 constant PENDING = 1 << 1;   // 0x0002
-    uint16 constant FUNDED = 1 << 2;    // 0x0004
-    uint16 constant RELEASED = 1 << 3;  // 0x0008
-    uint16 constant REFUNDED = 1 << 4;  // 0x0010
+    uint16 constant PENDING = 1 << 1; // 0x0002
+    uint16 constant FUNDED = 1 << 2; // 0x0004
+    uint16 constant RELEASED = 1 << 3; // 0x0008
+    uint16 constant REFUNDED = 1 << 4; // 0x0010
 
     function setUp() public {
         escrow = new EscrowClauseLogicV3();
@@ -49,7 +48,7 @@ contract EscrowClauseLogicV3Test is Test {
         vm.deal(charlie, 100 ether);
 
         // Give alice some tokens
-        token.mint(alice, 1000 * 10**18);
+        token.mint(alice, 1000 * 10 ** 18);
     }
 
     // Allow test contract to receive ETH
@@ -207,11 +206,7 @@ contract EscrowClauseLogicV3Test is Test {
 
         vm.prank(alice);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                EscrowClauseLogicV3.InsufficientDeposit.selector,
-                requiredAmount,
-                sentAmount
-            )
+            abi.encodeWithSelector(EscrowClauseLogicV3.InsufficientDeposit.selector, requiredAmount, sentAmount)
         );
         escrow.actionDeposit{value: sentAmount}(instanceId);
     }
@@ -222,13 +217,7 @@ contract EscrowClauseLogicV3Test is Test {
         _configureEscrow(instanceId, alice, bob, address(0), 1 ether);
 
         vm.prank(charlie);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                EscrowClauseLogicV3.NotDepositor.selector,
-                charlie,
-                alice
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(EscrowClauseLogicV3.NotDepositor.selector, charlie, alice));
         escrow.actionDeposit{value: 1 ether}(instanceId);
     }
 
@@ -238,7 +227,7 @@ contract EscrowClauseLogicV3Test is Test {
 
     function test_ActionDeposit_ERC20_Success() public {
         bytes32 instanceId = keccak256("erc20-deposit-1");
-        uint256 amount = 100 * 10**18;
+        uint256 amount = 100 * 10 ** 18;
 
         _configureEscrow(instanceId, alice, bob, address(token), amount);
 
@@ -259,7 +248,7 @@ contract EscrowClauseLogicV3Test is Test {
 
     function test_ActionDeposit_ERC20_RevertsIfNotApproved() public {
         bytes32 instanceId = keccak256("erc20-deposit-2");
-        uint256 amount = 100 * 10**18;
+        uint256 amount = 100 * 10 ** 18;
 
         _configureEscrow(instanceId, alice, bob, address(token), amount);
 
@@ -290,7 +279,7 @@ contract EscrowClauseLogicV3Test is Test {
 
     function test_ActionRelease_ERC20_Success() public {
         bytes32 instanceId = keccak256("release-erc20-1");
-        uint256 amount = 100 * 10**18;
+        uint256 amount = 100 * 10 ** 18;
 
         _configureAndFundEscrow(instanceId, alice, bob, address(token), amount);
 
@@ -342,7 +331,7 @@ contract EscrowClauseLogicV3Test is Test {
 
     function test_ActionRefund_ERC20_Success() public {
         bytes32 instanceId = keccak256("refund-erc20-1");
-        uint256 amount = 100 * 10**18;
+        uint256 amount = 100 * 10 ** 18;
 
         _configureAndFundEscrow(instanceId, alice, bob, address(token), amount);
 
@@ -399,7 +388,7 @@ contract EscrowClauseLogicV3Test is Test {
     function test_HandoffToken_Success() public {
         bytes32 instanceId = keccak256("handoff-3");
 
-        _configureAndFundEscrow(instanceId, alice, bob, address(token), 100 * 10**18);
+        _configureAndFundEscrow(instanceId, alice, bob, address(token), 100 * 10 ** 18);
         escrow.actionRelease(instanceId);
 
         assertEq(escrow.handoffToken(instanceId), address(token));
@@ -622,13 +611,13 @@ contract EscrowClauseLogicV3Test is Test {
         _configureEscrowWithCancellation(
             instanceId,
             alice, // depositor
-            bob,   // beneficiary
+            bob, // beneficiary
             address(0),
             amount,
             EscrowClauseLogicV3.FeeType.NONE,
             0, // feeAmount
             EscrowClauseLogicV3.CancellableBy.DEPOSITOR,
-            0  // noticePeriod
+            0 // noticePeriod
         );
 
         // Fund the escrow
@@ -727,14 +716,7 @@ contract EscrowClauseLogicV3Test is Test {
         uint256 startDate = block.timestamp;
 
         _configureEscrowWithProration(
-            instanceId,
-            alice,
-            bob,
-            address(0),
-            amount,
-            startDate,
-            duration,
-            EscrowClauseLogicV3.CancellableBy.DEPOSITOR
+            instanceId, alice, bob, address(0), amount, startDate, duration, EscrowClauseLogicV3.CancellableBy.DEPOSITOR
         );
 
         vm.prank(alice);
@@ -862,11 +844,7 @@ contract EscrowClauseLogicV3Test is Test {
 
         // Try to execute before notice period
         vm.expectRevert(
-            abi.encodeWithSelector(
-                EscrowClauseLogicV3.NoticePeriodNotElapsed.selector,
-                instanceId,
-                noticePeriod
-            )
+            abi.encodeWithSelector(EscrowClauseLogicV3.NoticePeriodNotElapsed.selector, instanceId, noticePeriod)
         );
         escrow.actionExecuteCancel(instanceId);
     }
@@ -898,9 +876,7 @@ contract EscrowClauseLogicV3Test is Test {
         vm.prank(bob);
         vm.expectRevert(
             abi.encodeWithSelector(
-                EscrowClauseLogicV3.NotAuthorizedToCancel.selector,
-                bob,
-                EscrowClauseLogicV3.CancellableBy.DEPOSITOR
+                EscrowClauseLogicV3.NotAuthorizedToCancel.selector, bob, EscrowClauseLogicV3.CancellableBy.DEPOSITOR
             )
         );
         escrow.actionInitiateCancel(instanceId);
@@ -909,9 +885,7 @@ contract EscrowClauseLogicV3Test is Test {
         vm.prank(charlie);
         vm.expectRevert(
             abi.encodeWithSelector(
-                EscrowClauseLogicV3.NotAuthorizedToCancel.selector,
-                charlie,
-                EscrowClauseLogicV3.CancellableBy.DEPOSITOR
+                EscrowClauseLogicV3.NotAuthorizedToCancel.selector, charlie, EscrowClauseLogicV3.CancellableBy.DEPOSITOR
             )
         );
         escrow.actionInitiateCancel(instanceId);
@@ -945,9 +919,7 @@ contract EscrowClauseLogicV3Test is Test {
         vm.prank(alice);
         vm.expectRevert(
             abi.encodeWithSelector(
-                EscrowClauseLogicV3.NotAuthorizedToCancel.selector,
-                alice,
-                EscrowClauseLogicV3.CancellableBy.BENEFICIARY
+                EscrowClauseLogicV3.NotAuthorizedToCancel.selector, alice, EscrowClauseLogicV3.CancellableBy.BENEFICIARY
             )
         );
         escrow.actionInitiateCancel(instanceId);
@@ -1008,12 +980,7 @@ contract EscrowClauseLogicV3Test is Test {
         escrow.actionDeposit{value: 1 ether}(instanceId);
 
         vm.prank(alice);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                EscrowClauseLogicV3.CancellationNotEnabled.selector,
-                instanceId
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(EscrowClauseLogicV3.CancellationNotEnabled.selector, instanceId));
         escrow.actionInitiateCancel(instanceId);
     }
 
@@ -1079,14 +1046,7 @@ contract EscrowClauseLogicV3Test is Test {
         uint256 startDate = block.timestamp + 7 days; // Starts in the future
 
         _configureEscrowWithProration(
-            instanceId,
-            alice,
-            bob,
-            address(0),
-            amount,
-            startDate,
-            30 days,
-            EscrowClauseLogicV3.CancellableBy.DEPOSITOR
+            instanceId, alice, bob, address(0), amount, startDate, 30 days, EscrowClauseLogicV3.CancellableBy.DEPOSITOR
         );
 
         vm.prank(alice);
@@ -1111,14 +1071,7 @@ contract EscrowClauseLogicV3Test is Test {
         uint256 duration = 30 days;
 
         _configureEscrowWithProration(
-            instanceId,
-            alice,
-            bob,
-            address(0),
-            amount,
-            startDate,
-            duration,
-            EscrowClauseLogicV3.CancellableBy.DEPOSITOR
+            instanceId, alice, bob, address(0), amount, startDate, duration, EscrowClauseLogicV3.CancellableBy.DEPOSITOR
         );
 
         vm.prank(alice);
@@ -1159,12 +1112,7 @@ contract EscrowClauseLogicV3Test is Test {
         escrow.actionDeposit{value: amount}(instanceId);
 
         vm.prank(alice);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                EscrowClauseLogicV3.ProrationNotConfigured.selector,
-                instanceId
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(EscrowClauseLogicV3.ProrationNotConfigured.selector, instanceId));
         escrow.actionInitiateCancel(instanceId);
     }
 
@@ -1346,7 +1294,7 @@ contract EscrowClauseLogicV3Test is Test {
 
     function test_Cancellation_ERC20_Success() public {
         bytes32 instanceId = keccak256("cancel-erc20");
-        uint256 amount = 100 * 10**18;
+        uint256 amount = 100 * 10 ** 18;
         uint256 bps = 2000; // 20%
 
         _configureEscrowWithCancellation(
@@ -1384,11 +1332,7 @@ contract EscrowClauseLogicV3Test is Test {
     // FUZZ TESTS
     // =============================================================
 
-    function testFuzz_ConfigureEscrow(
-        address depositor,
-        address beneficiary,
-        uint256 amount
-    ) public {
+    function testFuzz_ConfigureEscrow(address depositor, address beneficiary, uint256 amount) public {
         vm.assume(depositor != address(0));
         vm.assume(beneficiary != address(0));
         vm.assume(amount > 0 && amount < type(uint128).max);
@@ -1531,7 +1475,6 @@ contract EscrowClauseLogicV3Test is Test {
  * @title Fuzz Tests for Cancellation Split Calculations
  */
 contract EscrowCancellationFuzzTest is Test {
-
     EscrowClauseLogicV3 public escrow;
     address alice;
     address bob;
@@ -1547,22 +1490,14 @@ contract EscrowCancellationFuzzTest is Test {
     receive() external payable {}
 
     /// @notice Fuzz test: Fixed fee split always conserves total amount
-    function testFuzz_CancellationSplit_Fixed_ConservesTotal(
-        uint256 amount,
-        uint256 fixedFee
-    ) public {
+    function testFuzz_CancellationSplit_Fixed_ConservesTotal(uint256 amount, uint256 fixedFee) public {
         // Bound inputs to reasonable ranges
         amount = bound(amount, 1, 100 ether);
         fixedFee = bound(fixedFee, 0, 200 ether); // Can exceed amount
 
         bytes32 instanceId = keccak256(abi.encode("fuzz-fixed", amount, fixedFee));
 
-        _configureEscrowWithCancellation(
-            instanceId,
-            amount,
-            EscrowClauseLogicV3.FeeType.FIXED,
-            fixedFee
-        );
+        _configureEscrowWithCancellation(instanceId, amount, EscrowClauseLogicV3.FeeType.FIXED, fixedFee);
 
         vm.prank(alice);
         escrow.actionDeposit{value: amount}(instanceId);
@@ -1577,21 +1512,13 @@ contract EscrowCancellationFuzzTest is Test {
     }
 
     /// @notice Fuzz test: BPS split always conserves total amount
-    function testFuzz_CancellationSplit_BPS_ConservesTotal(
-        uint256 amount,
-        uint256 bps
-    ) public {
+    function testFuzz_CancellationSplit_BPS_ConservesTotal(uint256 amount, uint256 bps) public {
         amount = bound(amount, 1, 100 ether);
         bps = bound(bps, 0, 20000); // 0% to 200%
 
         bytes32 instanceId = keccak256(abi.encode("fuzz-bps", amount, bps));
 
-        _configureEscrowWithCancellation(
-            instanceId,
-            amount,
-            EscrowClauseLogicV3.FeeType.BPS,
-            bps
-        );
+        _configureEscrowWithCancellation(instanceId, amount, EscrowClauseLogicV3.FeeType.BPS, bps);
 
         vm.prank(alice);
         escrow.actionDeposit{value: amount}(instanceId);
@@ -1606,11 +1533,9 @@ contract EscrowCancellationFuzzTest is Test {
     }
 
     /// @notice Fuzz test: Prorated split always conserves total and respects time bounds
-    function testFuzz_CancellationSplit_Prorated_ConservesTotal(
-        uint256 amount,
-        uint256 elapsed,
-        uint256 duration
-    ) public {
+    function testFuzz_CancellationSplit_Prorated_ConservesTotal(uint256 amount, uint256 elapsed, uint256 duration)
+        public
+    {
         amount = bound(amount, 1, 100 ether);
         duration = bound(duration, 1 hours, 365 days);
         elapsed = bound(elapsed, 0, duration * 2); // Can be past duration
@@ -1619,12 +1544,7 @@ contract EscrowCancellationFuzzTest is Test {
 
         uint256 startDate = block.timestamp;
 
-        _configureEscrowWithProration(
-            instanceId,
-            amount,
-            startDate,
-            duration
-        );
+        _configureEscrowWithProration(instanceId, amount, startDate, duration);
 
         vm.prank(alice);
         escrow.actionDeposit{value: amount}(instanceId);
@@ -1648,11 +1568,7 @@ contract EscrowCancellationFuzzTest is Test {
     }
 
     /// @notice Fuzz test: BPS calculation is monotonically increasing
-    function testFuzz_CancellationSplit_BPS_Monotonic(
-        uint256 amount,
-        uint256 bps1,
-        uint256 bps2
-    ) public {
+    function testFuzz_CancellationSplit_BPS_Monotonic(uint256 amount, uint256 bps1, uint256 bps2) public {
         amount = bound(amount, 1, 100 ether);
         bps1 = bound(bps1, 0, 10000);
         bps2 = bound(bps2, bps1, 10000);
@@ -1668,8 +1584,8 @@ contract EscrowCancellationFuzzTest is Test {
         vm.prank(alice);
         escrow.actionDeposit{value: amount}(instanceId2);
 
-        (uint256 toBen1, ) = escrow.queryCancellationSplit(instanceId1);
-        (uint256 toBen2, ) = escrow.queryCancellationSplit(instanceId2);
+        (uint256 toBen1,) = escrow.queryCancellationSplit(instanceId1);
+        (uint256 toBen2,) = escrow.queryCancellationSplit(instanceId2);
 
         // Higher BPS should result in higher toBeneficiary
         assertTrue(toBen2 >= toBen1, "Higher BPS should give higher toBeneficiary");
@@ -1681,12 +1597,7 @@ contract EscrowCancellationFuzzTest is Test {
 
         bytes32 instanceId = keccak256(abi.encode("fuzz-none", amount));
 
-        _configureEscrowWithCancellation(
-            instanceId,
-            amount,
-            EscrowClauseLogicV3.FeeType.NONE,
-            0
-        );
+        _configureEscrowWithCancellation(instanceId, amount, EscrowClauseLogicV3.FeeType.NONE, 0);
 
         vm.prank(alice);
         escrow.actionDeposit{value: amount}(instanceId);
@@ -1714,12 +1625,9 @@ contract EscrowCancellationFuzzTest is Test {
         escrow.intakeReady(instanceId);
     }
 
-    function _configureEscrowWithProration(
-        bytes32 instanceId,
-        uint256 amount,
-        uint256 startDate,
-        uint256 duration
-    ) internal {
+    function _configureEscrowWithProration(bytes32 instanceId, uint256 amount, uint256 startDate, uint256 duration)
+        internal
+    {
         escrow.intakeDepositor(instanceId, alice);
         escrow.intakeBeneficiary(instanceId, bob);
         escrow.intakeAmount(instanceId, amount);
@@ -1737,7 +1645,6 @@ contract EscrowCancellationFuzzTest is Test {
  * @notice Includes cancellation state invariants
  */
 contract EscrowClauseLogicV3InvariantTest is Test {
-
     EscrowClauseLogicV3 public escrow;
     EscrowHandler public handler;
 
@@ -1779,9 +1686,8 @@ contract EscrowClauseLogicV3InvariantTest is Test {
         for (uint256 i = 0; i < instances.length; i++) {
             uint16 status = escrow.queryStatus(instances[i]);
             assertTrue(
-                status == 0 || status == PENDING || status == FUNDED ||
-                status == RELEASED || status == REFUNDED ||
-                status == CANCEL_PENDING || status == CANCEL_EXECUTED,
+                status == 0 || status == PENDING || status == FUNDED || status == RELEASED || status == REFUNDED
+                    || status == CANCEL_PENDING || status == CANCEL_EXECUTED,
                 "Invalid status value"
             );
         }
@@ -1822,8 +1728,7 @@ contract EscrowClauseLogicV3InvariantTest is Test {
             if (status == RELEASED || status == REFUNDED || status == CANCEL_EXECUTED) {
                 // These are the only valid terminal states
                 assertTrue(
-                    status == RELEASED || status == REFUNDED || status == CANCEL_EXECUTED,
-                    "Terminal state check"
+                    status == RELEASED || status == REFUNDED || status == CANCEL_EXECUTED, "Terminal state check"
                 );
             }
         }
@@ -1835,7 +1740,6 @@ contract EscrowClauseLogicV3InvariantTest is Test {
  * @notice Includes cancellation operations
  */
 contract EscrowHandler is Test {
-
     EscrowClauseLogicV3 public escrow;
 
     bytes32[] public allInstances;
@@ -1882,9 +1786,11 @@ contract EscrowHandler is Test {
         // Cancellation config
         escrow.intakeCancellationEnabled(instanceId, true);
         escrow.intakeCancellationFeeType(instanceId, EscrowClauseLogicV3.FeeType(uint8(feeType)));
-        if (feeType == 1) { // FIXED
+        if (feeType == 1) {
+            // FIXED
             escrow.intakeCancellationFeeAmount(instanceId, amount / 10); // 10% fixed fee
-        } else if (feeType == 2) { // BPS
+        } else if (feeType == 2) {
+            // BPS
             escrow.intakeCancellationFeeAmount(instanceId, 2500); // 25%
         }
         escrow.intakeCancellableBy(instanceId, EscrowClauseLogicV3.CancellableBy.EITHER);
@@ -1973,7 +1879,6 @@ contract EscrowHandler is Test {
  * @notice Tests demonstrating escrow cancellation interacting with other clause patterns
  */
 contract EscrowClauseLogicV3IntegrationTest is Test {
-
     EscrowClauseLogicV3 public escrow;
 
     address alice;
@@ -2127,12 +2032,7 @@ contract EscrowClauseLogicV3IntegrationTest is Test {
 
         // Milestone 1: Cannot cancel (not enabled)
         vm.prank(alice);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                EscrowClauseLogicV3.CancellationNotEnabled.selector,
-                milestone1
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(EscrowClauseLogicV3.CancellationNotEnabled.selector, milestone1));
         escrow.actionInitiateCancel(milestone1);
 
         // Milestone 2: Cancel with 50% fee

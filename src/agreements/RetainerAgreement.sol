@@ -36,7 +36,6 @@ import {EscrowClauseLogicV3} from "../clauses/financial/EscrowClauseLogicV3.sol"
 ///      - SignatureClauseLogicV3: Both parties sign terms
 ///      - EscrowClauseLogicV3: Hold funds with streaming release capability
 contract RetainerAgreement is AgreementBaseV3 {
-
     // ═══════════════════════════════════════════════════════════════
     //                        CONSTANTS
     // ═══════════════════════════════════════════════════════════════
@@ -58,36 +57,31 @@ contract RetainerAgreement is AgreementBaseV3 {
     /// @notice Per-instance agreement data
     struct InstanceData {
         // Instance metadata
-        uint256 instanceNumber;        // Sequential: 1, 2, 3...
-        address creator;               // Who created this instance
-        uint256 createdAt;             // Block timestamp
-
+        uint256 instanceNumber; // Sequential: 1, 2, 3...
+        address creator; // Who created this instance
+        uint256 createdAt; // Block timestamp
         // Clause instance IDs
-        bytes32 termsSignatureId;      // Signature instance for initial terms
-        bytes32 escrowId;              // Escrow instance
-
+        bytes32 termsSignatureId; // Signature instance for initial terms
+        bytes32 escrowId; // Escrow instance
         // Agreement-specific data
         address client;
         address contractor;
-        address paymentToken;          // address(0) for ETH
-        uint256 monthlyRate;           // Amount per period
-        uint256 periodDuration;        // Duration in seconds (e.g., 30 days)
-        uint256 noticePeriodDays;      // Days required for cancellation notice
-        bytes32 documentCID;           // IPFS CID of the agreement document
-
+        address paymentToken; // address(0) for ETH
+        uint256 monthlyRate; // Amount per period
+        uint256 periodDuration; // Duration in seconds (e.g., 30 days)
+        uint256 noticePeriodDays; // Days required for cancellation notice
+        bytes32 documentCID; // IPFS CID of the agreement document
         // State flags
         bool clientSigned;
         bool contractorSigned;
-        bool funded;                   // Escrow has been funded
-
+        bool funded; // Escrow has been funded
         // Streaming state
-        uint256 currentPeriodStart;    // When current period began
-        uint256 currentPeriodEnd;      // When current period ends
-        uint256 claimedAmount;         // Amount already claimed by contractor
-
+        uint256 currentPeriodStart; // When current period began
+        uint256 currentPeriodEnd; // When current period ends
+        uint256 claimedAmount; // Amount already claimed by contractor
         // Cancellation state
-        uint256 cancelInitiatedAt;     // When notice was given (0 = not initiated)
-        bool cancelled;                // Agreement has been cancelled
+        uint256 cancelInitiatedAt; // When notice was given (0 = not initiated)
+        bool cancelled; // Agreement has been cancelled
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -100,14 +94,12 @@ contract RetainerAgreement is AgreementBaseV3 {
         uint256 instanceCounter;
         mapping(uint256 => InstanceData) instances;
         mapping(address => uint256[]) userInstances;
-
         // Proxy mode storage (Technical mode) - uses instanceId = 0
         bool isProxyMode;
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.agreement.retainer.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant RETAINER_STORAGE_SLOT =
-        0x4c3d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c00;
+    bytes32 private constant RETAINER_STORAGE_SLOT = 0x4c3d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c00;
 
     function _getRetainerStorage() internal pure returns (RetainerStorage storage $) {
         assembly {
@@ -137,11 +129,7 @@ contract RetainerAgreement is AgreementBaseV3 {
     //                          EVENTS
     // ═══════════════════════════════════════════════════════════════
 
-    event InstanceCreated(
-        uint256 indexed instanceId,
-        address indexed client,
-        address indexed contractor
-    );
+    event InstanceCreated(uint256 indexed instanceId, address indexed client, address indexed contractor);
     event RetainerConfigured(
         uint256 indexed instanceId,
         address indexed client,
@@ -204,10 +192,7 @@ contract RetainerAgreement is AgreementBaseV3 {
     /// @notice Deploy the Agreement (works as singleton or proxy implementation)
     /// @param _signatureClause SignatureClauseLogicV3 address
     /// @param _escrowClause EscrowClauseLogicV3 address
-    constructor(
-        address _signatureClause,
-        address _escrowClause
-    ) {
+    constructor(address _signatureClause, address _escrowClause) {
         signatureClause = SignatureClauseLogicV3(_signatureClause);
         escrowClause = EscrowClauseLogicV3(_escrowClause);
         // Note: We don't call _disableInitializers() here because
@@ -334,11 +319,7 @@ contract RetainerAgreement is AgreementBaseV3 {
         signers[0] = inst.client;
         signers[1] = inst.contractor;
 
-        bytes32 termsHash = keccak256(abi.encode(
-            inst.monthlyRate,
-            inst.periodDuration,
-            inst.noticePeriodDays
-        ));
+        bytes32 termsHash = keccak256(abi.encode(inst.monthlyRate, inst.periodDuration, inst.noticePeriodDays));
 
         _delegateToClause(
             address(signatureClause),
@@ -351,36 +332,34 @@ contract RetainerAgreement is AgreementBaseV3 {
 
         // Initialize escrow clause
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeDepositor, (inst.escrowId, inst.client))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeDepositor, (inst.escrowId, inst.client))
         );
         _delegateToClause(
             address(escrowClause),
             abi.encodeCall(EscrowClauseLogicV3.intakeBeneficiary, (inst.escrowId, inst.contractor))
         );
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeToken, (inst.escrowId, inst.paymentToken))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeToken, (inst.escrowId, inst.paymentToken))
         );
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeAmount, (inst.escrowId, inst.monthlyRate))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeAmount, (inst.escrowId, inst.monthlyRate))
         );
 
         // PRORATED cancellation - key feature for retainers
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeCancellationEnabled, (inst.escrowId, true))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeCancellationEnabled, (inst.escrowId, true))
         );
         _delegateToClause(
             address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeCancellableBy,
-                          (inst.escrowId, EscrowClauseLogicV3.CancellableBy.EITHER))
+            abi.encodeCall(
+                EscrowClauseLogicV3.intakeCancellableBy, (inst.escrowId, EscrowClauseLogicV3.CancellableBy.EITHER)
+            )
         );
         _delegateToClause(
             address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeCancellationFeeType,
-                          (inst.escrowId, EscrowClauseLogicV3.FeeType.PRORATED))
+            abi.encodeCall(
+                EscrowClauseLogicV3.intakeCancellationFeeType, (inst.escrowId, EscrowClauseLogicV3.FeeType.PRORATED)
+            )
         );
         _delegateToClause(
             address(escrowClause),
@@ -396,10 +375,7 @@ contract RetainerAgreement is AgreementBaseV3 {
             abi.encodeCall(EscrowClauseLogicV3.intakeProrationStartDate, (inst.escrowId, block.timestamp))
         );
 
-        _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeReady, (inst.escrowId))
-        );
+        _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeReady, (inst.escrowId)));
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -433,12 +409,12 @@ contract RetainerAgreement is AgreementBaseV3 {
 
         // Check if both have signed
         bytes memory statusResult = _delegateViewToClause(
-            address(signatureClause),
-            abi.encodeCall(SignatureClauseLogicV3.queryStatus, (inst.termsSignatureId))
+            address(signatureClause), abi.encodeCall(SignatureClauseLogicV3.queryStatus, (inst.termsSignatureId))
         );
         uint16 status = abi.decode(statusResult, (uint16));
 
-        if (status == 0x0004) { // COMPLETE
+        if (status == 0x0004) {
+            // COMPLETE
             emit TermsAccepted(instanceId, inst.client, inst.contractor);
         }
     }
@@ -464,10 +440,7 @@ contract RetainerAgreement is AgreementBaseV3 {
         if (inst.funded) revert AlreadyFunded();
 
         // Deposit to escrow
-        _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.actionDeposit, (inst.escrowId))
-        );
+        _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionDeposit, (inst.escrowId)));
 
         inst.funded = true;
         inst.currentPeriodStart = block.timestamp;
@@ -502,10 +475,7 @@ contract RetainerAgreement is AgreementBaseV3 {
         // Note: This may require the escrow clause to support partial releases
         // For now, if the full period has elapsed, we do a full release
         if (block.timestamp >= inst.currentPeriodEnd) {
-            _delegateToClause(
-                address(escrowClause),
-                abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowId))
-            );
+            _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowId)));
         }
 
         emit StreamClaimed(instanceId, inst.contractor, claimable, inst.claimedAmount);
@@ -536,11 +506,7 @@ contract RetainerAgreement is AgreementBaseV3 {
     /// @notice Execute cancellation after notice period
     /// @dev Releases pro-rated amount to contractor, refunds rest to client
     /// @param instanceId The instance ID
-    function executeCancel(uint256 instanceId)
-        external
-        validInstance(instanceId)
-        onlyInstanceParty(instanceId)
-    {
+    function executeCancel(uint256 instanceId) external validInstance(instanceId) onlyInstanceParty(instanceId) {
         InstanceData storage inst = _getRetainerStorage().instances[instanceId];
 
         if (inst.cancelInitiatedAt == 0) revert CancelNotInitiated();
@@ -560,8 +526,7 @@ contract RetainerAgreement is AgreementBaseV3 {
 
         // Execute cancellation on escrow
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.actionInitiateCancel, (inst.escrowId))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionInitiateCancel, (inst.escrowId))
         );
 
         emit CancelExecuted(instanceId, contractorAmount, clientRefund);
@@ -625,17 +590,21 @@ contract RetainerAgreement is AgreementBaseV3 {
 
     /// @notice Get instance core data
     /// @dev Matches frontend hook expectations
-    function getInstance(uint256 instanceId) external view returns (
-        uint256 instanceNumber,
-        address creator,
-        uint256 createdAt,
-        address client,
-        address contractor,
-        address paymentToken,
-        uint256 monthlyRate,
-        uint256 periodDuration,
-        uint256 noticePeriodDays
-    ) {
+    function getInstance(uint256 instanceId)
+        external
+        view
+        returns (
+            uint256 instanceNumber,
+            address creator,
+            uint256 createdAt,
+            address client,
+            address contractor,
+            address paymentToken,
+            uint256 monthlyRate,
+            uint256 periodDuration,
+            uint256 noticePeriodDays
+        )
+    {
         InstanceData storage inst = _getRetainerStorage().instances[instanceId];
         return (
             inst.instanceNumber,
@@ -652,16 +621,20 @@ contract RetainerAgreement is AgreementBaseV3 {
 
     /// @notice Get instance streaming state
     /// @dev Matches frontend hook expectations - streamedAmount is calculated real-time
-    function getInstanceState(uint256 instanceId) external view returns (
-        bool termsAccepted,
-        bool funded,
-        uint256 currentPeriodStart,
-        uint256 currentPeriodEnd,
-        uint256 streamedAmount,
-        uint256 claimedAmount,
-        uint256 cancelInitiatedAt,
-        bool cancelled
-    ) {
+    function getInstanceState(uint256 instanceId)
+        external
+        view
+        returns (
+            bool termsAccepted,
+            bool funded,
+            uint256 currentPeriodStart,
+            uint256 currentPeriodEnd,
+            uint256 streamedAmount,
+            uint256 claimedAmount,
+            uint256 cancelInitiatedAt,
+            bool cancelled
+        )
+    {
         InstanceData storage inst = _getRetainerStorage().instances[instanceId];
         bool _termsAccepted = inst.clientSigned && inst.contractorSigned;
         uint256 _streamedAmount = _calculateStreamedAmount(inst);

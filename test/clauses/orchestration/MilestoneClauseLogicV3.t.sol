@@ -24,11 +24,11 @@ contract MilestoneClauseLogicV3Test is Test {
     bytes32 public escrowId3 = keccak256("escrow-3");
 
     // State constants
-    uint16 constant PENDING = 1 << 1;   // 0x0002
-    uint16 constant COMPLETE = 1 << 2;  // 0x0004
+    uint16 constant PENDING = 1 << 1; // 0x0002
+    uint16 constant COMPLETE = 1 << 2; // 0x0004
     uint16 constant CANCELLED = 1 << 3; // 0x0008
-    uint16 constant ACTIVE = 1 << 4;    // 0x0010
-    uint16 constant DISPUTED = 1 << 5;  // 0x0020
+    uint16 constant ACTIVE = 1 << 4; // 0x0010
+    uint16 constant DISPUTED = 1 << 5; // 0x0020
 
     // Milestone state constants
     uint8 constant MILESTONE_NONE = 0;
@@ -76,7 +76,7 @@ contract MilestoneClauseLogicV3Test is Test {
         milestone.intakeMilestone(instanceId, descriptionHash1, 1000);
 
         assertEq(milestone.queryMilestoneCount(instanceId), 1);
-        (bytes32 desc, uint256 amount,,,, ) = milestone.queryMilestone(instanceId, 0);
+        (bytes32 desc, uint256 amount,,,,) = milestone.queryMilestone(instanceId, 0);
         assertEq(desc, descriptionHash1);
         assertEq(amount, 1000);
     }
@@ -100,13 +100,7 @@ contract MilestoneClauseLogicV3Test is Test {
             milestone.intakeMilestone(instanceId, bytes32(i), 100);
         }
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                MilestoneClauseLogicV3.TooManyMilestones.selector,
-                21,
-                20
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(MilestoneClauseLogicV3.TooManyMilestones.selector, 21, 20));
         milestone.intakeMilestone(instanceId, bytes32(uint256(20)), 100);
     }
 
@@ -165,13 +159,7 @@ contract MilestoneClauseLogicV3Test is Test {
     function test_intakeMilestoneEscrowId_revertsIfInvalidIndex() public {
         milestone.intakeMilestone(instanceId, descriptionHash1, 1000);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                MilestoneClauseLogicV3.InvalidMilestoneIndex.selector,
-                5,
-                1
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(MilestoneClauseLogicV3.InvalidMilestoneIndex.selector, 5, 1));
         milestone.intakeMilestoneEscrowId(instanceId, 5, escrowId1);
     }
 
@@ -238,12 +226,7 @@ contract MilestoneClauseLogicV3Test is Test {
         milestone.intakeMilestoneEscrowId(instanceId, 0, escrowId1);
         // Missing escrow for milestone 1 and 2
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                MilestoneClauseLogicV3.EscrowNotLinked.selector,
-                1
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(MilestoneClauseLogicV3.EscrowNotLinked.selector, 1));
         milestone.actionActivate(instanceId);
     }
 
@@ -260,13 +243,7 @@ contract MilestoneClauseLogicV3Test is Test {
         _setupAndActivate();
 
         vm.prank(client);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                MilestoneClauseLogicV3.NotBeneficiary.selector,
-                client,
-                beneficiary
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(MilestoneClauseLogicV3.NotBeneficiary.selector, client, beneficiary));
         milestone.actionRequestConfirmation(instanceId, 0);
     }
 
@@ -274,13 +251,7 @@ contract MilestoneClauseLogicV3Test is Test {
         _setupAndActivate();
 
         vm.prank(beneficiary);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                MilestoneClauseLogicV3.InvalidMilestoneIndex.selector,
-                10,
-                3
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(MilestoneClauseLogicV3.InvalidMilestoneIndex.selector, 10, 3));
         milestone.actionRequestConfirmation(instanceId, 10);
     }
 
@@ -294,9 +265,7 @@ contract MilestoneClauseLogicV3Test is Test {
         vm.prank(beneficiary);
         vm.expectRevert(
             abi.encodeWithSelector(
-                MilestoneClauseLogicV3.WrongMilestoneState.selector,
-                MILESTONE_PENDING,
-                MILESTONE_REQUESTED
+                MilestoneClauseLogicV3.WrongMilestoneState.selector, MILESTONE_PENDING, MILESTONE_REQUESTED
             )
         );
         milestone.actionRequestConfirmation(instanceId, 0);
@@ -329,13 +298,7 @@ contract MilestoneClauseLogicV3Test is Test {
         _setupAndActivate();
 
         vm.prank(beneficiary);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                MilestoneClauseLogicV3.NotClient.selector,
-                beneficiary,
-                client
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(MilestoneClauseLogicV3.NotClient.selector, beneficiary, client));
         milestone.actionConfirm(instanceId, 0);
     }
 
@@ -550,14 +513,8 @@ contract MilestoneClauseLogicV3Test is Test {
         vm.prank(client);
         milestone.actionConfirm(instanceId, 0);
 
-        (
-            bytes32 desc,
-            uint256 amount,
-            bytes32 escrowId,
-            uint8 status,
-            uint256 confirmedAt,
-            uint256 releasedAt
-        ) = milestone.queryMilestone(instanceId, 0);
+        (bytes32 desc, uint256 amount, bytes32 escrowId, uint8 status, uint256 confirmedAt, uint256 releasedAt) =
+            milestone.queryMilestone(instanceId, 0);
 
         assertEq(desc, descriptionHash1);
         assertEq(amount, 1000);
@@ -606,7 +563,7 @@ contract MilestoneClauseLogicV3Test is Test {
 
         milestone.intakeMilestone(instanceId, descriptionHash1, amount);
 
-        (, uint256 storedAmount,,,, ) = milestone.queryMilestone(instanceId, 0);
+        (, uint256 storedAmount,,,,) = milestone.queryMilestone(instanceId, 0);
         assertEq(storedAmount, amount);
     }
 
@@ -631,11 +588,7 @@ contract MilestoneClauseLogicV3Test is Test {
         assertEq(milestone.queryClient(instanceId), _client);
     }
 
-    function testFuzz_queryTotalAmount_multiMilestones(
-        uint128 amount1,
-        uint128 amount2,
-        uint128 amount3
-    ) public {
+    function testFuzz_queryTotalAmount_multiMilestones(uint128 amount1, uint128 amount2, uint128 amount3) public {
         vm.assume(amount1 > 0 && amount2 > 0 && amount3 > 0);
 
         milestone.intakeMilestone(instanceId, descriptionHash1, amount1);
@@ -658,11 +611,7 @@ contract MilestoneClauseLogicV3Test is Test {
         assertEq(milestone.queryTotalAmount(id2), 5000);
     }
 
-    function testFuzz_fullWorkflow(
-        address _beneficiary,
-        address _client,
-        uint128 amount
-    ) public {
+    function testFuzz_fullWorkflow(address _beneficiary, address _client, uint128 amount) public {
         vm.assume(_beneficiary != address(0));
         vm.assume(_client != address(0));
         vm.assume(_beneficiary != _client);
@@ -863,7 +812,8 @@ contract MilestoneInvariantHandler is Test {
         uint256 index = indexSeed % milestoneCount;
         uint8 status = milestone.queryMilestoneStatus(instanceId, index);
 
-        if (status == 1) { // MILESTONE_PENDING
+        if (status == 1) {
+            // MILESTONE_PENDING
             vm.prank(beneficiary);
             milestone.actionRequestConfirmation(instanceId, index);
         }
@@ -875,7 +825,8 @@ contract MilestoneInvariantHandler is Test {
         uint256 index = indexSeed % milestoneCount;
         uint8 status = milestone.queryMilestoneStatus(instanceId, index);
 
-        if (status == 1 || status == 2) { // PENDING or REQUESTED
+        if (status == 1 || status == 2) {
+            // PENDING or REQUESTED
             vm.prank(client);
             milestone.actionConfirm(instanceId, index);
         }
@@ -887,10 +838,12 @@ contract MilestoneInvariantHandler is Test {
         uint256 index = indexSeed % milestoneCount;
         uint8 status = milestone.queryMilestoneStatus(instanceId, index);
 
-        if (status == 3) { // CONFIRMED
+        if (status == 3) {
+            // CONFIRMED
             milestone.actionMarkReleased(instanceId, index);
 
-            if (milestone.queryStatus(instanceId) == (1 << 2)) { // COMPLETE
+            if (milestone.queryStatus(instanceId) == (1 << 2)) {
+                // COMPLETE
                 isActive = false;
             }
         }

@@ -10,7 +10,6 @@ import {PartyRegistryClauseLogicV3} from "../../src/clauses/access/PartyRegistry
 /// @notice Tests handoff patterns from DeclarativeClauseLogicV3 to SignatureClauseLogicV3
 /// @dev The primary handoff: handoffContentHash() → intakeDocumentHash()
 contract DeclarativeToSignatureHandoffTest is Test {
-
     DeclarativeClauseLogicV3 public declarative;
     SignatureClauseLogicV3 public signature;
     PartyRegistryClauseLogicV3 public registry;
@@ -29,11 +28,11 @@ contract DeclarativeToSignatureHandoffTest is Test {
     bytes32 constant SIGNER = keccak256("SIGNER");
 
     // State constants
-    uint16 constant REGISTERED = 1 << 1;  // 0x0002 - Declarative
-    uint16 constant SEALED     = 1 << 2;  // 0x0004 - Declarative
-    uint16 constant PENDING    = 1 << 1;  // 0x0002 - Signature
-    uint16 constant COMPLETE   = 1 << 2;  // 0x0004 - Signature
-    uint16 constant ACTIVE     = 1 << 1;  // 0x0002 - Registry
+    uint16 constant REGISTERED = 1 << 1; // 0x0002 - Declarative
+    uint16 constant SEALED = 1 << 2; // 0x0004 - Declarative
+    uint16 constant PENDING = 1 << 1; // 0x0002 - Signature
+    uint16 constant COMPLETE = 1 << 2; // 0x0004 - Signature
+    uint16 constant ACTIVE = 1 << 1; // 0x0002 - Registry
 
     // Test content
     bytes32 constant CONTENT_HASH = keccak256("test-document-content");
@@ -524,7 +523,6 @@ contract DeclarativeToSignatureHandoffTest is Test {
 
 /// @title Declarative → Signature Invariant Tests
 contract DeclarativeToSignatureInvariantTest is Test {
-
     DeclarativeClauseLogicV3 public declarative;
     SignatureClauseLogicV3 public signature;
     DeclarativeSignatureHandler public handler;
@@ -587,11 +585,10 @@ contract DeclarativeToSignatureInvariantTest is Test {
 
 /// @title Handler for invariant testing
 contract DeclarativeSignatureHandler is Test {
-
     DeclarativeClauseLogicV3 public declarative;
     SignatureClauseLogicV3 public signature;
 
-    bytes32[] public handoffPairs;  // [decl1, sig1, decl2, sig2, ...]
+    bytes32[] public handoffPairs; // [decl1, sig1, decl2, sig2, ...]
     bytes32[] public declarativeInstances;
     bytes32[] public completedSignatures;
 

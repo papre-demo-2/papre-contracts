@@ -83,9 +83,7 @@ contract SignatureEscrowCrossChainAdapter {
 
     /// @notice Emitted when an incoming cross-chain release is processed
     event CrossChainReleaseExecuted(
-        bytes32 indexed escrowInstanceId,
-        uint64 sourceChainSelector,
-        address sourceAgreement
+        bytes32 indexed escrowInstanceId, uint64 sourceChainSelector, address sourceAgreement
     );
 
     // =============================================================
@@ -97,12 +95,7 @@ contract SignatureEscrowCrossChainAdapter {
     /// @param _escrowClause Address of EscrowClauseLogicV3 implementation
     /// @param _crossChainClause Address of CrossChainClauseLogicV3 implementation
     /// @param _controller Address of CrossChainControllerV3 on this chain
-    constructor(
-        address _signatureClause,
-        address _escrowClause,
-        address _crossChainClause,
-        address _controller
-    ) {
+    constructor(address _signatureClause, address _escrowClause, address _crossChainClause, address _controller) {
         signatureClause = SignatureClauseLogicV3(_signatureClause);
         escrowClause = EscrowClauseLogicV3(_escrowClause);
         crossChainClause = CrossChainClauseLogicV3(_crossChainClause);
@@ -150,11 +143,7 @@ contract SignatureEscrowCrossChainAdapter {
 
         // Step 3: Configure cross-chain clause state (for tracking)
         _configureCrossChainState(
-            crossChainInstanceId,
-            destinationChainSelector,
-            destinationAgreement,
-            documentHash,
-            escrowInstanceId
+            crossChainInstanceId, destinationChainSelector, destinationAgreement, documentHash, escrowInstanceId
         );
 
         // Step 4: Send cross-chain message via controller
@@ -173,12 +162,7 @@ contract SignatureEscrowCrossChainAdapter {
         );
         if (!success) revert SendFailed(data);
 
-        emit CrossChainReleaseInitiated(
-            signatureInstanceId,
-            escrowInstanceId,
-            messageId,
-            destinationChainSelector
-        );
+        emit CrossChainReleaseInitiated(signatureInstanceId, escrowInstanceId, messageId, destinationChainSelector);
     }
 
     /// @notice Send cross-chain release without checking signature (for manual triggers)
@@ -198,11 +182,7 @@ contract SignatureEscrowCrossChainAdapter {
     ) external payable {
         // Configure cross-chain clause state
         _configureCrossChainState(
-            crossChainInstanceId,
-            destinationChainSelector,
-            destinationAgreement,
-            documentHash,
-            escrowInstanceId
+            crossChainInstanceId, destinationChainSelector, destinationAgreement, documentHash, escrowInstanceId
         );
 
         // Send cross-chain message via controller
@@ -267,16 +247,11 @@ contract SignatureEscrowCrossChainAdapter {
         require(success, "Process incoming failed");
 
         // Release the escrow
-        (success, data) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.actionRelease, (escrowInstanceId))
-        );
+        (success, data) =
+            address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.actionRelease, (escrowInstanceId)));
         if (!success) revert ReleaseFailed(data);
 
-        emit CrossChainReleaseExecuted(
-            escrowInstanceId,
-            sourceChainSelector,
-            sourceAgreement
-        );
+        emit CrossChainReleaseExecuted(escrowInstanceId, sourceChainSelector, sourceAgreement);
     }
 
     // =============================================================
@@ -297,54 +272,40 @@ contract SignatureEscrowCrossChainAdapter {
         // Set destination chain
         (success, data) = address(crossChainClause).delegatecall(
             abi.encodeCall(
-                CrossChainClauseLogicV3.intakeDestinationChain,
-                (crossChainInstanceId, destinationChainSelector)
+                CrossChainClauseLogicV3.intakeDestinationChain, (crossChainInstanceId, destinationChainSelector)
             )
         );
         require(success, "Set destination chain failed");
 
         // Set remote agreement
         (success, data) = address(crossChainClause).delegatecall(
-            abi.encodeCall(
-                CrossChainClauseLogicV3.intakeRemoteAgreement,
-                (crossChainInstanceId, destinationAgreement)
-            )
+            abi.encodeCall(CrossChainClauseLogicV3.intakeRemoteAgreement, (crossChainInstanceId, destinationAgreement))
         );
         require(success, "Set remote agreement failed");
 
         // Set action
         (success, data) = address(crossChainClause).delegatecall(
-            abi.encodeCall(
-                CrossChainClauseLogicV3.intakeAction,
-                (crossChainInstanceId, ACTION_RELEASE_ESCROW)
-            )
+            abi.encodeCall(CrossChainClauseLogicV3.intakeAction, (crossChainInstanceId, ACTION_RELEASE_ESCROW))
         );
         require(success, "Set action failed");
 
         // Set content hash
         (success, data) = address(crossChainClause).delegatecall(
-            abi.encodeCall(
-                CrossChainClauseLogicV3.intakeContentHash,
-                (crossChainInstanceId, contentHash)
-            )
+            abi.encodeCall(CrossChainClauseLogicV3.intakeContentHash, (crossChainInstanceId, contentHash))
         );
         require(success, "Set content hash failed");
 
         // Set extra data (escrow instance ID)
         (success, data) = address(crossChainClause).delegatecall(
             abi.encodeCall(
-                CrossChainClauseLogicV3.intakeExtraData,
-                (crossChainInstanceId, abi.encode(escrowInstanceId))
+                CrossChainClauseLogicV3.intakeExtraData, (crossChainInstanceId, abi.encode(escrowInstanceId))
             )
         );
         require(success, "Set extra data failed");
 
         // Set controller
         (success, data) = address(crossChainClause).delegatecall(
-            abi.encodeCall(
-                CrossChainClauseLogicV3.intakeController,
-                (crossChainInstanceId, address(controller))
-            )
+            abi.encodeCall(CrossChainClauseLogicV3.intakeController, (crossChainInstanceId, address(controller)))
         );
         require(success, "Set controller failed");
 
@@ -364,11 +325,11 @@ contract SignatureEscrowCrossChainAdapter {
     /// @param destinationChainSelector The destination chain's CCIP selector
     /// @param destinationAgreement The agreement address on the destination chain
     /// @return fee The fee in native token
-    function getFee(
-        bytes32 escrowInstanceId,
-        uint64 destinationChainSelector,
-        address destinationAgreement
-    ) external view returns (uint256 fee) {
+    function getFee(bytes32 escrowInstanceId, uint64 destinationChainSelector, address destinationAgreement)
+        external
+        view
+        returns (uint256 fee)
+    {
         return controller.getFee(
             destinationChainSelector,
             destinationAgreement,

@@ -24,10 +24,10 @@ contract SignatureClauseLogicV3Test is Test {
     bytes32 constant INSTANCE_2 = bytes32(uint256(2));
 
     // State constants (matching the contract)
-    uint16 constant UNINITIALIZED = 1 << 0;  // 0x0001
-    uint16 constant PENDING       = 1 << 1;  // 0x0002
-    uint16 constant COMPLETE      = 1 << 2;  // 0x0004
-    uint16 constant CANCELLED     = 1 << 3;  // 0x0008
+    uint16 constant UNINITIALIZED = 1 << 0; // 0x0001
+    uint16 constant PENDING = 1 << 1; // 0x0002
+    uint16 constant COMPLETE = 1 << 2; // 0x0004
+    uint16 constant CANCELLED = 1 << 3; // 0x0008
 
     function setUp() public {
         clause = new SignatureClauseLogicV3();
@@ -646,18 +646,13 @@ contract SignatureClauseLogicV3Test is Test {
         clause.setTrustedAttestor(attestor, true);
     }
 
-    function _createAttestation(
-        bytes32 instanceId,
-        uint256 slotIndex,
-        address claimer
-    ) internal view returns (bytes memory) {
-        bytes32 messageHash = keccak256(abi.encode(
-            address(clause),
-            instanceId,
-            slotIndex,
-            claimer,
-            "CLAIM_SIGNER_SLOT"
-        ));
+    function _createAttestation(bytes32 instanceId, uint256 slotIndex, address claimer)
+        internal
+        view
+        returns (bytes memory)
+    {
+        bytes32 messageHash =
+            keccak256(abi.encode(address(clause), instanceId, slotIndex, claimer, "CLAIM_SIGNER_SLOT"));
         bytes32 ethSignedHash = messageHash.toEthSignedMessageHash();
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(ATTESTOR_PK, ethSignedHash);
         return abi.encodePacked(r, s, v);
@@ -722,11 +717,7 @@ contract SignatureClauseLogicV3Test is Test {
 
         bytes memory attestation = _createAttestation(INSTANCE_1, 1, charlie);
 
-        vm.expectRevert(abi.encodeWithSelector(
-            SignatureClauseLogicV3.SlotAlreadyFilled.selector,
-            INSTANCE_1,
-            1
-        ));
+        vm.expectRevert(abi.encodeWithSelector(SignatureClauseLogicV3.SlotAlreadyFilled.selector, INSTANCE_1, 1));
         vm.prank(charlie);
         clause.actionClaimSignerSlot(INSTANCE_1, 1, charlie, attestation);
     }
@@ -748,11 +739,7 @@ contract SignatureClauseLogicV3Test is Test {
 
         // Charlie tries to claim same slot
         bytes memory attestation2 = _createAttestation(INSTANCE_1, 1, charlie);
-        vm.expectRevert(abi.encodeWithSelector(
-            SignatureClauseLogicV3.SlotAlreadyFilled.selector,
-            INSTANCE_1,
-            1
-        ));
+        vm.expectRevert(abi.encodeWithSelector(SignatureClauseLogicV3.SlotAlreadyFilled.selector, INSTANCE_1, 1));
         vm.prank(charlie);
         clause.actionClaimSignerSlot(INSTANCE_1, 1, charlie, attestation2);
     }
@@ -774,10 +761,7 @@ contract SignatureClauseLogicV3Test is Test {
         bytes memory attestation = _createAttestation(INSTANCE_1, 1, bob);
 
         // The recovered address will be the attestor, but it's not trusted
-        vm.expectRevert(abi.encodeWithSelector(
-            SignatureClauseLogicV3.UnauthorizedAttestor.selector,
-            attestor
-        ));
+        vm.expectRevert(abi.encodeWithSelector(SignatureClauseLogicV3.UnauthorizedAttestor.selector, attestor));
         vm.prank(bob);
         clause.actionClaimSignerSlot(INSTANCE_1, 1, bob, attestation);
     }
@@ -846,11 +830,7 @@ contract SignatureClauseLogicV3Test is Test {
         // Alice tries to claim the pending slot (but she's already a signer at index 0)
         bytes memory attestation = _createAttestation(INSTANCE_1, 1, alice);
 
-        vm.expectRevert(abi.encodeWithSelector(
-            SignatureClauseLogicV3.ClaimerAlreadySigner.selector,
-            INSTANCE_1,
-            alice
-        ));
+        vm.expectRevert(abi.encodeWithSelector(SignatureClauseLogicV3.ClaimerAlreadySigner.selector, INSTANCE_1, alice));
         vm.prank(alice);
         clause.actionClaimSignerSlot(INSTANCE_1, 1, alice, attestation);
     }

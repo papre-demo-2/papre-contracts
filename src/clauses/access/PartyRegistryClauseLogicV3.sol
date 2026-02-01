@@ -17,13 +17,12 @@ import {ClauseBase} from "../../base/ClauseBase.sol";
 ///        bytes32 constant ARBITER = keccak256("ARBITER");
 ///        bytes32 constant BENEFICIARY = keccak256("BENEFICIARY");
 contract PartyRegistryClauseLogicV3 is ClauseBase {
-
     // =============================================================
     // STATES (bitmask)
     // =============================================================
 
     // Uses UNINITIALIZED from ClauseBase (1 << 0 = 0x0001)
-    uint16 internal constant ACTIVE = 1 << 1;  // 0x0002
+    uint16 internal constant ACTIVE = 1 << 1; // 0x0002
 
     // =============================================================
     // ERC-7201 NAMESPACED STORAGE
@@ -46,8 +45,7 @@ contract PartyRegistryClauseLogicV3 is ClauseBase {
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.clause.partyregistry.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant STORAGE_SLOT =
-        0xe71edd7a17bf0aa0275f121442c57c2a84deb99e132bbadf61f10bb96e4a3900;
+    bytes32 private constant STORAGE_SLOT = 0xe71edd7a17bf0aa0275f121442c57c2a84deb99e132bbadf61f10bb96e4a3900;
 
     function _getStorage() internal pure returns (PartyRegistryStorage storage $) {
         assembly {
@@ -107,11 +105,7 @@ contract PartyRegistryClauseLogicV3 is ClauseBase {
     /// @param instanceId Unique identifier for this registry instance
     /// @param role The role to query
     /// @return Array of addresses with that role
-    function handoffPartiesInRole(bytes32 instanceId, bytes32 role)
-        external
-        view
-        returns (address[] memory)
-    {
+    function handoffPartiesInRole(bytes32 instanceId, bytes32 role) external view returns (address[] memory) {
         PartyRegistryStorage storage $ = _getStorage();
         require($.status[instanceId] == ACTIVE, "Wrong state");
         return $.roleParties[instanceId][role];
@@ -120,11 +114,7 @@ contract PartyRegistryClauseLogicV3 is ClauseBase {
     /// @notice Get all registered parties - for wiring to downstream clauses
     /// @param instanceId Unique identifier for this registry instance
     /// @return Array of all party addresses
-    function handoffAllParties(bytes32 instanceId)
-        external
-        view
-        returns (address[] memory)
-    {
+    function handoffAllParties(bytes32 instanceId) external view returns (address[] memory) {
         PartyRegistryStorage storage $ = _getStorage();
         require($.status[instanceId] == ACTIVE, "Wrong state");
         return $.parties[instanceId];
@@ -194,12 +184,9 @@ contract PartyRegistryClauseLogicV3 is ClauseBase {
 
     /// @notice Internal helper to add a party with a role
     /// @dev Handles deduplication for both parties and role assignments
-    function _addPartyWithRole(
-        PartyRegistryStorage storage $,
-        bytes32 instanceId,
-        address party,
-        bytes32 role
-    ) private {
+    function _addPartyWithRole(PartyRegistryStorage storage $, bytes32 instanceId, address party, bytes32 role)
+        private
+    {
         require(party != address(0), "Invalid party address");
         require(role != bytes32(0), "Invalid role");
 

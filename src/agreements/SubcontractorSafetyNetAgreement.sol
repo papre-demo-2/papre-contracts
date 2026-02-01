@@ -42,7 +42,6 @@ import {ArbitrationClauseLogicV3} from "../clauses/governance/ArbitrationClauseL
 ///      - EscrowClauseLogicV3: Holds payment with auto-release capability
 ///      - ArbitrationClauseLogicV3: Handles disputes with third-party resolution
 contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
-
     // ═══════════════════════════════════════════════════════════════
     //                        CONSTANTS
     // ═══════════════════════════════════════════════════════════════
@@ -66,10 +65,11 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
     // ═══════════════════════════════════════════════════════════════
 
     enum Ruling {
-        NONE,               // 0 - Not yet ruled
-        CLIENT_WINS,        // 1 - Full refund to client
+        NONE, // 0 - Not yet ruled
+        CLIENT_WINS, // 1 - Full refund to client
         SUBCONTRACTOR_WINS, // 2 - Full release to subcontractor
-        SPLIT               // 3 - Split per splitBasisPoints (to subcontractor)
+        SPLIT // 3 - Split per splitBasisPoints (to subcontractor)
+
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -79,15 +79,14 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
     /// @notice Dispute information
     struct DisputeInfo {
         bool active;
-        address claimant;               // Who filed the dispute
-        bytes32 claimCID;               // IPFS CID of claim document
+        address claimant; // Who filed the dispute
+        bytes32 claimCID; // IPFS CID of claim document
         uint256 filedAt;
-        uint256 evidenceDeadline;       // filedAt + 7 days (configurable)
-
+        uint256 evidenceDeadline; // filedAt + 7 days (configurable)
         // Ruling
         Ruling ruling;
         bytes32 justificationCID;
-        uint256 splitBasisPoints;       // If SPLIT ruling
+        uint256 splitBasisPoints; // If SPLIT ruling
         uint256 ruledAt;
         bool resolved;
     }
@@ -95,40 +94,34 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
     /// @notice Per-instance agreement data
     struct InstanceData {
         // Instance metadata
-        uint256 instanceNumber;        // Sequential: 1, 2, 3...
-        address creator;               // Who created this instance
-        uint256 createdAt;             // Block timestamp
-
+        uint256 instanceNumber; // Sequential: 1, 2, 3...
+        address creator; // Who created this instance
+        uint256 createdAt; // Block timestamp
         // Clause instance IDs
-        bytes32 termsSignatureId;      // Signature instance for initial terms
-        bytes32 escrowId;              // Escrow instance
-        bytes32 arbitrationId;         // Arbitration instance
-
+        bytes32 termsSignatureId; // Signature instance for initial terms
+        bytes32 escrowId; // Escrow instance
+        bytes32 arbitrationId; // Arbitration instance
         // Agreement-specific data
         address client;
         address subcontractor;
-        address arbitrator;             // Pre-selected dispute resolver
-        address paymentToken;           // address(0) for ETH
+        address arbitrator; // Pre-selected dispute resolver
+        address paymentToken; // address(0) for ETH
         uint256 paymentAmount;
-        bytes32 scopeHash;              // IPFS CID of scope document
-        uint256 workDeadline;           // When work must be submitted
-        uint256 reviewPeriodDays;       // Days for client to respond
-        bytes32 documentCID;            // IPFS CID of the agreement document
-
+        bytes32 scopeHash; // IPFS CID of scope document
+        uint256 workDeadline; // When work must be submitted
+        uint256 reviewPeriodDays; // Days for client to respond
+        bytes32 documentCID; // IPFS CID of the agreement document
         // State flags
         bool clientSigned;
         bool subcontractorSigned;
         bool funded;
-
         // Work submission
         bytes32 deliverableHash;
         uint256 workSubmittedAt;
-        uint256 reviewDeadline;         // Calculated: submittedAt + reviewPeriodDays
-
+        uint256 reviewDeadline; // Calculated: submittedAt + reviewPeriodDays
         // Review outcome
         bool workApproved;
-        bool deadlineEnforced;          // True if auto-released
-
+        bool deadlineEnforced; // True if auto-released
         // Dispute
         DisputeInfo dispute;
     }
@@ -143,14 +136,12 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
         uint256 instanceCounter;
         mapping(uint256 => InstanceData) instances;
         mapping(address => uint256[]) userInstances;
-
         // Proxy mode storage (Technical mode) - uses instanceId = 0
         bool isProxyMode;
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.agreement.safetynet.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant SAFETYNET_STORAGE_SLOT =
-        0x5d4e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d00;
+    bytes32 private constant SAFETYNET_STORAGE_SLOT = 0x5d4e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d00;
 
     function _getSafetyNetStorage() internal pure returns (SafetyNetStorage storage $) {
         assembly {
@@ -190,10 +181,7 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
     // ═══════════════════════════════════════════════════════════════
 
     event InstanceCreated(
-        uint256 indexed instanceId,
-        address indexed client,
-        address indexed subcontractor,
-        address arbitrator
+        uint256 indexed instanceId, address indexed client, address indexed subcontractor, address arbitrator
     );
     event SafetyNetConfigured(
         uint256 indexed instanceId,
@@ -209,7 +197,9 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
     event WorkSubmitted(uint256 indexed instanceId, bytes32 deliverableHash, uint256 reviewDeadline);
     event WorkApproved(uint256 indexed instanceId, uint256 approvedAt);
     event DeadlineEnforced(uint256 indexed instanceId, address indexed enforcer, uint256 releasedAmount);
-    event DisputeFiled(uint256 indexed instanceId, address indexed claimant, bytes32 claimCID, uint256 evidenceDeadline);
+    event DisputeFiled(
+        uint256 indexed instanceId, address indexed claimant, bytes32 claimCID, uint256 evidenceDeadline
+    );
     event EvidenceSubmitted(uint256 indexed instanceId, address indexed submitter, bytes32 evidenceCID);
     event DisputeRuled(uint256 indexed instanceId, uint8 ruling, bytes32 justificationCID, uint256 splitBasisPoints);
 
@@ -258,11 +248,7 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
     // ═══════════════════════════════════════════════════════════════
 
     /// @notice Deploy the Agreement (works as singleton or proxy implementation)
-    constructor(
-        address _signatureClause,
-        address _escrowClause,
-        address _arbitrationClause
-    ) {
+    constructor(address _signatureClause, address _escrowClause, address _arbitrationClause) {
         signatureClause = SignatureClauseLogicV3(_signatureClause);
         escrowClause = EscrowClauseLogicV3(_escrowClause);
         arbitrationClause = ArbitrationClauseLogicV3(_arbitrationClause);
@@ -420,46 +406,41 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
 
         // Initialize escrow clause
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeDepositor, (inst.escrowId, inst.client))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeDepositor, (inst.escrowId, inst.client))
         );
         _delegateToClause(
             address(escrowClause),
             abi.encodeCall(EscrowClauseLogicV3.intakeBeneficiary, (inst.escrowId, inst.subcontractor))
         );
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeToken, (inst.escrowId, inst.paymentToken))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeToken, (inst.escrowId, inst.paymentToken))
         );
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeAmount, (inst.escrowId, inst.paymentAmount))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeAmount, (inst.escrowId, inst.paymentAmount))
         );
 
         // Cancellation only available to client with 50% kill fee
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeCancellationEnabled, (inst.escrowId, true))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeCancellationEnabled, (inst.escrowId, true))
         );
         _delegateToClause(
             address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeCancellableBy,
-                          (inst.escrowId, EscrowClauseLogicV3.CancellableBy.DEPOSITOR))
+            abi.encodeCall(
+                EscrowClauseLogicV3.intakeCancellableBy, (inst.escrowId, EscrowClauseLogicV3.CancellableBy.DEPOSITOR)
+            )
         );
         _delegateToClause(
             address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeCancellationFeeType,
-                          (inst.escrowId, EscrowClauseLogicV3.FeeType.BPS))
+            abi.encodeCall(
+                EscrowClauseLogicV3.intakeCancellationFeeType, (inst.escrowId, EscrowClauseLogicV3.FeeType.BPS)
+            )
         );
         _delegateToClause(
             address(escrowClause),
             abi.encodeCall(EscrowClauseLogicV3.intakeCancellationFeeAmount, (inst.escrowId, 5000))
         );
 
-        _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeReady, (inst.escrowId))
-        );
+        _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeReady, (inst.escrowId)));
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -492,12 +473,12 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
 
         // Check if both have signed
         bytes memory statusResult = _delegateViewToClause(
-            address(signatureClause),
-            abi.encodeCall(SignatureClauseLogicV3.queryStatus, (inst.termsSignatureId))
+            address(signatureClause), abi.encodeCall(SignatureClauseLogicV3.queryStatus, (inst.termsSignatureId))
         );
         uint16 status = abi.decode(statusResult, (uint16));
 
-        if (status == 0x0004) { // COMPLETE
+        if (status == 0x0004) {
+            // COMPLETE
             emit TermsAccepted(instanceId, inst.client, inst.subcontractor);
         }
     }
@@ -519,10 +500,7 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
         if (!inst.clientSigned || !inst.subcontractorSigned) revert TermsNotAccepted();
         if (inst.funded) revert AlreadyFunded();
 
-        _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.actionDeposit, (inst.escrowId))
-        );
+        _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionDeposit, (inst.escrowId)));
 
         inst.funded = true;
 
@@ -561,11 +539,7 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
 
     /// @notice Approve work and release payment (client only)
     /// @param instanceId The instance ID
-    function approveWork(uint256 instanceId)
-        external
-        validInstance(instanceId)
-        onlyInstanceClient(instanceId)
-    {
+    function approveWork(uint256 instanceId) external validInstance(instanceId) onlyInstanceClient(instanceId) {
         InstanceData storage inst = _getSafetyNetStorage().instances[instanceId];
 
         if (inst.workSubmittedAt == 0) revert WorkNotSubmitted();
@@ -576,10 +550,7 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
         inst.workApproved = true;
 
         // Release escrow
-        _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowId))
-        );
+        _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowId)));
 
         emit WorkApproved(instanceId, block.timestamp);
     }
@@ -615,10 +586,7 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
     /// @notice Enforce deadline - auto-release to subcontractor (anyone)
     /// @dev Can only be called after reviewDeadline has passed
     /// @param instanceId The instance ID
-    function enforceDeadline(uint256 instanceId)
-        external
-        validInstance(instanceId)
-    {
+    function enforceDeadline(uint256 instanceId) external validInstance(instanceId) {
         InstanceData storage inst = _getSafetyNetStorage().instances[instanceId];
 
         // Check all conditions
@@ -631,10 +599,7 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
         inst.deadlineEnforced = true;
 
         // Release full amount to subcontractor
-        _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowId))
-        );
+        _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowId)));
 
         emit DeadlineEnforced(instanceId, msg.sender, inst.paymentAmount);
     }
@@ -685,8 +650,7 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
             abi.encodeCall(ArbitrationClauseLogicV3.intakeRespondent, (inst.arbitrationId, respondent))
         );
         _delegateToClause(
-            address(arbitrationClause),
-            abi.encodeCall(ArbitrationClauseLogicV3.intakeReady, (inst.arbitrationId))
+            address(arbitrationClause), abi.encodeCall(ArbitrationClauseLogicV3.intakeReady, (inst.arbitrationId))
         );
         _delegateToClause(
             address(arbitrationClause),
@@ -718,12 +682,7 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
     /// @param ruling The ruling (0=none, 1=client wins, 2=subcontractor wins, 3=split)
     /// @param justificationCID IPFS CID of ruling justification
     /// @param splitBasisPoints If ruling=SPLIT, percentage to subcontractor (e.g., 7500 = 75%)
-    function rule(
-        uint256 instanceId,
-        uint8 ruling,
-        bytes32 justificationCID,
-        uint256 splitBasisPoints
-    )
+    function rule(uint256 instanceId, uint8 ruling, bytes32 justificationCID, uint256 splitBasisPoints)
         external
         validInstance(instanceId)
         onlyInstanceArbitrator(instanceId)
@@ -743,23 +702,14 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
         // Execute ruling
         if (ruling == uint8(Ruling.SUBCONTRACTOR_WINS)) {
             // Full release to subcontractor
-            _delegateToClause(
-                address(escrowClause),
-                abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowId))
-            );
+            _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowId)));
         } else if (ruling == uint8(Ruling.CLIENT_WINS)) {
             // Full refund to client
-            _delegateToClause(
-                address(escrowClause),
-                abi.encodeCall(EscrowClauseLogicV3.actionRefund, (inst.escrowId))
-            );
+            _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionRefund, (inst.escrowId)));
         } else {
             // SPLIT - release full to subcontractor (they handle client portion off-chain)
             // In production, implement proper split mechanism
-            _delegateToClause(
-                address(escrowClause),
-                abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowId))
-            );
+            _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowId)));
         }
 
         emit DisputeRuled(instanceId, ruling, justificationCID, splitBasisPoints);
@@ -781,19 +731,23 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
 
     /// @notice Get instance core data
     /// @dev Matches frontend hook expectations - returns 11 values
-    function getInstance(uint256 instanceId) external view returns (
-        uint256 instanceNumber,
-        address creator,
-        uint256 createdAt,
-        address client,
-        address subcontractor,
-        address arbitrator,
-        address paymentToken,
-        uint256 paymentAmount,
-        bytes32 scopeHash,
-        uint256 workDeadline,
-        uint256 reviewPeriodDays
-    ) {
+    function getInstance(uint256 instanceId)
+        external
+        view
+        returns (
+            uint256 instanceNumber,
+            address creator,
+            uint256 createdAt,
+            address client,
+            address subcontractor,
+            address arbitrator,
+            address paymentToken,
+            uint256 paymentAmount,
+            bytes32 scopeHash,
+            uint256 workDeadline,
+            uint256 reviewPeriodDays
+        )
+    {
         InstanceData storage inst = _getSafetyNetStorage().instances[instanceId];
         return (
             inst.instanceNumber,
@@ -812,16 +766,20 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
 
     /// @notice Get instance state
     /// @dev Matches frontend hook expectations - returns 8 values
-    function getInstanceState(uint256 instanceId) external view returns (
-        bool termsAccepted,
-        bool funded,
-        bool workSubmitted,
-        bool workApproved,
-        uint256 reviewDeadline,
-        bool deadlineEnforced,
-        bool disputeActive,
-        bool disputeResolved
-    ) {
+    function getInstanceState(uint256 instanceId)
+        external
+        view
+        returns (
+            bool termsAccepted,
+            bool funded,
+            bool workSubmitted,
+            bool workApproved,
+            uint256 reviewDeadline,
+            bool deadlineEnforced,
+            bool disputeActive,
+            bool disputeResolved
+        )
+    {
         InstanceData storage inst = _getSafetyNetStorage().instances[instanceId];
         bool _termsAccepted = inst.clientSigned && inst.subcontractorSigned;
 
@@ -839,16 +797,20 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
 
     /// @notice Get dispute information
     /// @dev Matches frontend hook expectations - returns 8 values
-    function getDispute(uint256 instanceId) external view returns (
-        address claimant,
-        bytes32 claimCID,
-        uint256 filedAt,
-        uint256 evidenceDeadline,
-        uint8 ruling,
-        bytes32 justificationCID,
-        uint256 splitBasisPoints,
-        uint256 ruledAt
-    ) {
+    function getDispute(uint256 instanceId)
+        external
+        view
+        returns (
+            address claimant,
+            bytes32 claimCID,
+            uint256 filedAt,
+            uint256 evidenceDeadline,
+            uint8 ruling,
+            bytes32 justificationCID,
+            uint256 splitBasisPoints,
+            uint256 ruledAt
+        )
+    {
         DisputeInfo storage dispute = _getSafetyNetStorage().instances[instanceId].dispute;
         return (
             dispute.claimant,

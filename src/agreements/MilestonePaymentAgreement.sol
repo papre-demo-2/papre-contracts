@@ -55,7 +55,6 @@ import {MilestoneEscrowAdapter} from "../adapters/MilestoneEscrowAdapter.sol";
 ///      - EscrowClauseLogicV3: Multiple instances (one per milestone)
 ///      - MilestoneClauseLogicV3: Track milestone state and deadlines
 contract MilestonePaymentAgreement is AgreementBaseV3 {
-
     // ═══════════════════════════════════════════════════════════════
     //                        CONSTANTS
     // ═══════════════════════════════════════════════════════════════
@@ -77,14 +76,14 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
 
     /// @notice Configuration for a single milestone
     struct MilestoneConfig {
-        bytes32 description;    // Hash/CID of milestone description
-        uint256 amount;         // Payment amount for this milestone
-        uint256 deadline;       // Unix timestamp deadline
-        uint256 releasedAt;     // Unix timestamp when payment was released (0 if not yet released)
-        string disputeReason;   // On-chain dispute reason (empty if not disputed)
-        uint256 disputedAt;     // Timestamp when disputed (0 if never disputed)
+        bytes32 description; // Hash/CID of milestone description
+        uint256 amount; // Payment amount for this milestone
+        uint256 deadline; // Unix timestamp deadline
+        uint256 releasedAt; // Unix timestamp when payment was released (0 if not yet released)
+        string disputeReason; // On-chain dispute reason (empty if not disputed)
+        uint256 disputedAt; // Timestamp when disputed (0 if never disputed)
         string submissionMessage; // Contractor's message when submitting work
-        uint256 submittedAt;    // Timestamp when work was submitted (0 if not yet submitted)
+        uint256 submittedAt; // Timestamp when work was submitted (0 if not yet submitted)
     }
 
     /// @notice Per-instance data for milestone agreement
@@ -93,27 +92,21 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
         uint256 instanceNumber;
         address creator;
         uint256 createdAt;
-
         // Parties
         address client;
         address contractor;
-
         // Payment config
         address paymentToken;
         uint256 totalAmount;
-
         // Instance IDs
         bytes32 termsSignatureId;
         bytes32 milestoneTrackerId;
         bytes32[MAX_MILESTONES] escrowIds;
-
         // Milestone data
         uint8 milestoneCount;
         MilestoneConfig[MAX_MILESTONES] milestones;
-
         // Document storage
-        bytes32 documentCID;      // Keccak256 hash of filled agreement CID on Storacha
-
+        bytes32 documentCID; // Keccak256 hash of filled agreement CID on Storacha
         // State
         bool termsAccepted;
         bool funded;
@@ -127,14 +120,12 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
         uint256 instanceCounter;
         mapping(uint256 => InstanceData) instances;
         mapping(address => uint256[]) userInstances;
-
         // Proxy mode storage (Technical mode) - uses instanceId = 0
         bool isProxyMode;
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.agreement.milestonepayment.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant MILESTONE_STORAGE_SLOT =
-        0x3b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b00;
+    bytes32 private constant MILESTONE_STORAGE_SLOT = 0x3b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b00;
 
     function _getMilestoneStorage() internal pure returns (MilestonePaymentStorage storage $) {
         assembly {
@@ -170,11 +161,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     //                          EVENTS
     // ═══════════════════════════════════════════════════════════════
 
-    event InstanceCreated(
-        uint256 indexed instanceId,
-        address indexed client,
-        address indexed contractor
-    );
+    event InstanceCreated(uint256 indexed instanceId, address indexed client, address indexed contractor);
     event ProjectConfigured(
         uint256 indexed instanceId,
         address indexed client,
@@ -243,12 +230,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     /// @param _escrowClause EscrowClauseLogicV3 address
     /// @param _milestoneClause MilestoneClauseLogicV3 address
     /// @param _milestoneAdapter MilestoneEscrowAdapter address
-    constructor(
-        address _signatureClause,
-        address _escrowClause,
-        address _milestoneClause,
-        address _milestoneAdapter
-    ) {
+    constructor(address _signatureClause, address _escrowClause, address _milestoneClause, address _milestoneAdapter) {
         signatureClause = SignatureClauseLogicV3(_signatureClause);
         escrowClause = EscrowClauseLogicV3(_escrowClause);
         milestoneClause = MilestoneClauseLogicV3(_milestoneClause);
@@ -436,10 +418,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     /// @notice Sign the project terms
     /// @param instanceId The instance to sign
     /// @param signature Cryptographic signature
-    function signTerms(
-        uint256 instanceId,
-        bytes calldata signature
-    )
+    function signTerms(uint256 instanceId, bytes calldata signature)
         external
         validInstance(instanceId)
         onlyInstanceParty(instanceId)
@@ -453,12 +432,12 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
         );
 
         bytes memory statusResult = _delegateViewToClause(
-            address(signatureClause),
-            abi.encodeCall(SignatureClauseLogicV3.queryStatus, (inst.termsSignatureId))
+            address(signatureClause), abi.encodeCall(SignatureClauseLogicV3.queryStatus, (inst.termsSignatureId))
         );
         uint16 status = abi.decode(statusResult, (uint16));
 
-        if (status == 0x0004) { // COMPLETE
+        if (status == 0x0004) {
+            // COMPLETE
             inst.termsAccepted = true;
             _initializeAllEscrows(inst);
             emit TermsAccepted(instanceId, inst.client, inst.contractor);
@@ -491,15 +470,13 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
         // Mark all escrows as funded (they'll draw from Agreement balance on release)
         for (uint8 i = 0; i < inst.milestoneCount; i++) {
             _delegateToClause(
-                address(escrowClause),
-                abi.encodeCall(EscrowClauseLogicV3.actionMarkFunded, (inst.escrowIds[i]))
+                address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionMarkFunded, (inst.escrowIds[i]))
             );
         }
 
         // Activate the milestone tracker (transition from PENDING to ACTIVE)
         _delegateToClause(
-            address(milestoneClause),
-            abi.encodeCall(MilestoneClauseLogicV3.actionActivate, (inst.milestoneTrackerId))
+            address(milestoneClause), abi.encodeCall(MilestoneClauseLogicV3.actionActivate, (inst.milestoneTrackerId))
         );
 
         inst.funded = true;
@@ -514,11 +491,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     /// @param instanceId The instance
     /// @param milestoneIndex Which milestone (0-indexed)
     /// @param message Contractor's message describing the submitted work
-    function requestMilestoneConfirmation(
-        uint256 instanceId,
-        uint8 milestoneIndex,
-        string calldata message
-    )
+    function requestMilestoneConfirmation(uint256 instanceId, uint8 milestoneIndex, string calldata message)
         external
         whenNotPaused
         validInstance(instanceId)
@@ -537,7 +510,9 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
         // Request confirmation on milestone clause
         _delegateToClause(
             address(milestoneClause),
-            abi.encodeCall(MilestoneClauseLogicV3.actionRequestConfirmation, (inst.milestoneTrackerId, uint256(milestoneIndex)))
+            abi.encodeCall(
+                MilestoneClauseLogicV3.actionRequestConfirmation, (inst.milestoneTrackerId, uint256(milestoneIndex))
+            )
         );
 
         emit MilestoneSubmitted(instanceId, milestoneIndex, inst.milestones[milestoneIndex].description, message);
@@ -546,10 +521,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     /// @notice Client approves a milestone and releases payment
     /// @param instanceId The instance
     /// @param milestoneIndex Which milestone (0-indexed)
-    function approveMilestone(
-        uint256 instanceId,
-        uint8 milestoneIndex
-    )
+    function approveMilestone(uint256 instanceId, uint8 milestoneIndex)
         external
         whenNotPaused
         validInstance(instanceId)
@@ -563,8 +535,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
         // Use adapter to atomically confirm + release
         _delegateToClause(
             address(milestoneAdapter),
-            abi.encodeCall(MilestoneEscrowAdapter.confirmAndRelease,
-                          (inst.milestoneTrackerId, uint256(milestoneIndex)))
+            abi.encodeCall(MilestoneEscrowAdapter.confirmAndRelease, (inst.milestoneTrackerId, uint256(milestoneIndex)))
         );
 
         // Record when this milestone was released
@@ -585,11 +556,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     /// @param reason Human-readable reason for rejection (max ~500 chars recommended)
     /// @dev This resets the milestone to PENDING so the contractor can resubmit.
     ///      The reason is stored on-chain for transparency.
-    function rejectMilestone(
-        uint256 instanceId,
-        uint8 milestoneIndex,
-        string calldata reason
-    )
+    function rejectMilestone(uint256 instanceId, uint8 milestoneIndex, string calldata reason)
         external
         whenNotPaused
         validInstance(instanceId)
@@ -607,7 +574,10 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
         bytes32 reasonHash = keccak256(bytes(reason));
         _delegateToClause(
             address(milestoneClause),
-            abi.encodeCall(MilestoneClauseLogicV3.actionRejectAndReset, (inst.milestoneTrackerId, uint256(milestoneIndex), reasonHash))
+            abi.encodeCall(
+                MilestoneClauseLogicV3.actionRejectAndReset,
+                (inst.milestoneTrackerId, uint256(milestoneIndex), reasonHash)
+            )
         );
 
         emit MilestoneRejected(instanceId, milestoneIndex, reason);
@@ -632,15 +602,13 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
         for (uint8 i = 0; i < inst.milestoneCount; i++) {
             // Check if this escrow is still funded (not released)
             bytes memory fundedResult = _delegateViewToClause(
-                address(escrowClause),
-                abi.encodeCall(EscrowClauseLogicV3.queryIsFunded, (inst.escrowIds[i]))
+                address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.queryIsFunded, (inst.escrowIds[i]))
             );
 
             if (abi.decode(fundedResult, (bool))) {
                 // Still funded - cancel it
                 _delegateToClause(
-                    address(escrowClause),
-                    abi.encodeCall(EscrowClauseLogicV3.actionInitiateCancel, (inst.escrowIds[i]))
+                    address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionInitiateCancel, (inst.escrowIds[i]))
                 );
             }
         }
@@ -657,12 +625,9 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     /// @dev Only callable by the client (agreement creator)
     /// @param attestor Address to set trust status for
     /// @param trusted Whether the attestor is trusted
-    function setTrustedAttestor(address attestor, bool trusted)
-        external
-    {
+    function setTrustedAttestor(address attestor, bool trusted) external {
         _delegateToClause(
-            address(signatureClause),
-            abi.encodeCall(SignatureClauseLogicV3.setTrustedAttestor, (attestor, trusted))
+            address(signatureClause), abi.encodeCall(SignatureClauseLogicV3.setTrustedAttestor, (attestor, trusted))
         );
         emit TrustedAttestorUpdated(attestor, trusted);
     }
@@ -671,10 +636,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     /// @dev Called by the invited counterparty after receiving backend attestation
     /// @param instanceId The instance to claim contractor slot for
     /// @param attestation ECDSA signature from trusted attestor
-    function claimContractorSlot(
-        uint256 instanceId,
-        bytes calldata attestation
-    )
+    function claimContractorSlot(uint256 instanceId, bytes calldata attestation)
         external
         validInstance(instanceId)
         notCancelled(instanceId)
@@ -690,8 +652,9 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
         // Slot index 1 = contractor (index 0 = client)
         _delegateToClause(
             address(signatureClause),
-            abi.encodeCall(SignatureClauseLogicV3.actionClaimSignerSlot,
-                          (inst.termsSignatureId, 1, msg.sender, attestation))
+            abi.encodeCall(
+                SignatureClauseLogicV3.actionClaimSignerSlot, (inst.termsSignatureId, 1, msg.sender, attestation)
+            )
         );
 
         // Update the agreement's contractor
@@ -719,10 +682,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     /// @dev Called by the invited client after receiving backend attestation
     /// @param instanceId The instance to claim client slot for
     /// @param attestation ECDSA signature from trusted attestor
-    function claimClientSlot(
-        uint256 instanceId,
-        bytes calldata attestation
-    )
+    function claimClientSlot(uint256 instanceId, bytes calldata attestation)
         external
         validInstance(instanceId)
         notCancelled(instanceId)
@@ -738,8 +698,9 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
         // Slot index 0 = client (index 1 = contractor)
         _delegateToClause(
             address(signatureClause),
-            abi.encodeCall(SignatureClauseLogicV3.actionClaimSignerSlot,
-                          (inst.termsSignatureId, 0, msg.sender, attestation))
+            abi.encodeCall(
+                SignatureClauseLogicV3.actionClaimSignerSlot, (inst.termsSignatureId, 0, msg.sender, attestation)
+            )
         );
 
         // Update the agreement's client
@@ -754,12 +715,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     /// @notice Check if an instance has a pending client slot
     /// @param instanceId The instance to check
     /// @return hasPending True if client slot is still address(0)
-    function hasPendingClient(uint256 instanceId)
-        external
-        view
-        validInstance(instanceId)
-        returns (bool hasPending)
-    {
+    function hasPendingClient(uint256 instanceId) external view validInstance(instanceId) returns (bool hasPending) {
         return _getMilestoneStorage().instances[instanceId].client == address(0);
     }
 
@@ -778,16 +734,20 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     }
 
     /// @notice Get instance data
-    function getInstance(uint256 instanceId) external view returns (
-        uint256 instanceNumber,
-        address creator,
-        uint256 createdAt,
-        address client,
-        address contractor,
-        address paymentToken,
-        uint256 totalAmount,
-        uint8 milestoneCount
-    ) {
+    function getInstance(uint256 instanceId)
+        external
+        view
+        returns (
+            uint256 instanceNumber,
+            address creator,
+            uint256 createdAt,
+            address client,
+            address contractor,
+            address paymentToken,
+            uint256 totalAmount,
+            uint8 milestoneCount
+        )
+    {
         InstanceData storage inst = _getMilestoneStorage().instances[instanceId];
         return (
             inst.instanceNumber,
@@ -802,38 +762,43 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     }
 
     /// @notice Get instance state
-    function getInstanceState(uint256 instanceId) external view returns (
-        bool termsAccepted,
-        bool funded,
-        uint8 completedMilestones,
-        uint8 totalMilestones,
-        bool cancelled
-    ) {
+    function getInstanceState(uint256 instanceId)
+        external
+        view
+        returns (bool termsAccepted, bool funded, uint8 completedMilestones, uint8 totalMilestones, bool cancelled)
+    {
         InstanceData storage inst = _getMilestoneStorage().instances[instanceId];
-        return (
-            inst.termsAccepted,
-            inst.funded,
-            inst.completedMilestones,
-            inst.milestoneCount,
-            inst.cancelled
-        );
+        return (inst.termsAccepted, inst.funded, inst.completedMilestones, inst.milestoneCount, inst.cancelled);
     }
 
     /// @notice Get a specific milestone from an instance
-    function getMilestone(uint256 instanceId, uint8 index) external view returns (
-        bytes32 description,
-        uint256 amount,
-        uint256 deadline,
-        uint256 releasedAt,
-        string memory disputeReason,
-        uint256 disputedAt,
-        string memory submissionMessage,
-        uint256 submittedAt
-    ) {
+    function getMilestone(uint256 instanceId, uint8 index)
+        external
+        view
+        returns (
+            bytes32 description,
+            uint256 amount,
+            uint256 deadline,
+            uint256 releasedAt,
+            string memory disputeReason,
+            uint256 disputedAt,
+            string memory submissionMessage,
+            uint256 submittedAt
+        )
+    {
         InstanceData storage inst = _getMilestoneStorage().instances[instanceId];
         if (index >= inst.milestoneCount) revert InvalidMilestoneIndex();
         MilestoneConfig storage m = inst.milestones[index];
-        return (m.description, m.amount, m.deadline, m.releasedAt, m.disputeReason, m.disputedAt, m.submissionMessage, m.submittedAt);
+        return (
+            m.description,
+            m.amount,
+            m.deadline,
+            m.releasedAt,
+            m.disputeReason,
+            m.disputedAt,
+            m.submissionMessage,
+            m.submittedAt
+        );
     }
 
     /// @notice Get the status of a specific milestone
@@ -900,29 +865,41 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     }
 
     /// @notice Legacy: Get milestone (proxy mode only, uses instance 0)
-    function getMilestone(uint8 index) external view returns (
-        bytes32 description,
-        uint256 amount,
-        uint256 deadline,
-        uint256 releasedAt,
-        string memory disputeReason,
-        uint256 disputedAt,
-        string memory submissionMessage,
-        uint256 submittedAt
-    ) {
+    function getMilestone(uint8 index)
+        external
+        view
+        returns (
+            bytes32 description,
+            uint256 amount,
+            uint256 deadline,
+            uint256 releasedAt,
+            string memory disputeReason,
+            uint256 disputedAt,
+            string memory submissionMessage,
+            uint256 submittedAt
+        )
+    {
         InstanceData storage inst = _getMilestoneStorage().instances[0];
         if (index >= inst.milestoneCount) revert InvalidMilestoneIndex();
         MilestoneConfig storage m = inst.milestones[index];
-        return (m.description, m.amount, m.deadline, m.releasedAt, m.disputeReason, m.disputedAt, m.submissionMessage, m.submittedAt);
+        return (
+            m.description,
+            m.amount,
+            m.deadline,
+            m.releasedAt,
+            m.disputeReason,
+            m.disputedAt,
+            m.submissionMessage,
+            m.submittedAt
+        );
     }
 
     /// @notice Legacy: Get project state (proxy mode only, uses instance 0)
-    function getProjectState() external view returns (
-        bool termsAccepted,
-        bool funded,
-        uint8 completedMilestones,
-        uint8 totalMilestones
-    ) {
+    function getProjectState()
+        external
+        view
+        returns (bool termsAccepted, bool funded, uint8 completedMilestones, uint8 totalMilestones)
+    {
         InstanceData storage inst = _getMilestoneStorage().instances[0];
         return (inst.termsAccepted, inst.funded, inst.completedMilestones, inst.milestoneCount);
     }
@@ -973,65 +950,61 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
             // Add milestone to milestone clause
             _delegateToClause(
                 address(milestoneClause),
-                abi.encodeCall(MilestoneClauseLogicV3.intakeMilestone,
-                              (milestoneTrackerId, inst.milestones[i].description, amount))
+                abi.encodeCall(
+                    MilestoneClauseLogicV3.intakeMilestone, (milestoneTrackerId, inst.milestones[i].description, amount)
+                )
             );
 
             // Configure each escrow
             _delegateToClause(
-                address(escrowClause),
-                abi.encodeCall(EscrowClauseLogicV3.intakeDepositor, (escrowId, inst.client))
+                address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeDepositor, (escrowId, inst.client))
             );
             _delegateToClause(
                 address(escrowClause),
                 abi.encodeCall(EscrowClauseLogicV3.intakeBeneficiary, (escrowId, inst.contractor))
             );
             _delegateToClause(
-                address(escrowClause),
-                abi.encodeCall(EscrowClauseLogicV3.intakeToken, (escrowId, inst.paymentToken))
+                address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeToken, (escrowId, inst.paymentToken))
             );
             _delegateToClause(
-                address(escrowClause),
-                abi.encodeCall(EscrowClauseLogicV3.intakeAmount, (escrowId, amount))
+                address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeAmount, (escrowId, amount))
             );
 
             // Enable cancellation with 50/50 split if cancelled
             _delegateToClause(
-                address(escrowClause),
-                abi.encodeCall(EscrowClauseLogicV3.intakeCancellationEnabled, (escrowId, true))
+                address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeCancellationEnabled, (escrowId, true))
             );
             _delegateToClause(
                 address(escrowClause),
-                abi.encodeCall(EscrowClauseLogicV3.intakeCancellableBy,
-                              (escrowId, EscrowClauseLogicV3.CancellableBy.EITHER))
+                abi.encodeCall(
+                    EscrowClauseLogicV3.intakeCancellableBy, (escrowId, EscrowClauseLogicV3.CancellableBy.EITHER)
+                )
             );
             _delegateToClause(
                 address(escrowClause),
-                abi.encodeCall(EscrowClauseLogicV3.intakeCancellationFeeType,
-                              (escrowId, EscrowClauseLogicV3.FeeType.BPS))
+                abi.encodeCall(
+                    EscrowClauseLogicV3.intakeCancellationFeeType, (escrowId, EscrowClauseLogicV3.FeeType.BPS)
+                )
             );
             _delegateToClause(
                 address(escrowClause),
                 abi.encodeCall(EscrowClauseLogicV3.intakeCancellationFeeAmount, (escrowId, 5000)) // 50%
             );
 
-            _delegateToClause(
-                address(escrowClause),
-                abi.encodeCall(EscrowClauseLogicV3.intakeReady, (escrowId))
-            );
+            _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeReady, (escrowId)));
 
             // Link escrow to milestone
             _delegateToClause(
                 address(milestoneClause),
-                abi.encodeCall(MilestoneClauseLogicV3.intakeMilestoneEscrowId,
-                              (milestoneTrackerId, uint256(i), escrowId))
+                abi.encodeCall(
+                    MilestoneClauseLogicV3.intakeMilestoneEscrowId, (milestoneTrackerId, uint256(i), escrowId)
+                )
             );
         }
 
         // Finalize milestone clause
         _delegateToClause(
-            address(milestoneClause),
-            abi.encodeCall(MilestoneClauseLogicV3.intakeReady, (milestoneTrackerId))
+            address(milestoneClause), abi.encodeCall(MilestoneClauseLogicV3.intakeReady, (milestoneTrackerId))
         );
     }
 

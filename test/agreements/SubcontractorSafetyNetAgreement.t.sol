@@ -48,10 +48,7 @@ contract SubcontractorSafetyNetAgreementTest is Test {
 
     // Events (match contract)
     event InstanceCreated(
-        uint256 indexed instanceId,
-        address indexed client,
-        address indexed subcontractor,
-        address arbitrator
+        uint256 indexed instanceId, address indexed client, address indexed subcontractor, address arbitrator
     );
     event SafetyNetConfigured(
         uint256 indexed instanceId,
@@ -67,7 +64,9 @@ contract SubcontractorSafetyNetAgreementTest is Test {
     event WorkSubmitted(uint256 indexed instanceId, bytes32 deliverableHash, uint256 reviewDeadline);
     event WorkApproved(uint256 indexed instanceId, uint256 approvedAt);
     event DeadlineEnforced(uint256 indexed instanceId, address indexed enforcer, uint256 releasedAmount);
-    event DisputeFiled(uint256 indexed instanceId, address indexed claimant, bytes32 claimCID, uint256 evidenceDeadline);
+    event DisputeFiled(
+        uint256 indexed instanceId, address indexed claimant, bytes32 claimCID, uint256 evidenceDeadline
+    );
     event EvidenceSubmitted(uint256 indexed instanceId, address indexed submitter, bytes32 evidenceCID);
     event DisputeRuled(uint256 indexed instanceId, uint8 ruling, bytes32 justificationCID, uint256 splitBasisPoints);
 
@@ -79,9 +78,7 @@ contract SubcontractorSafetyNetAgreementTest is Test {
 
         // Deploy safetyNet singleton (3 args: signatureClause, escrowClause, arbitrationClause)
         safetyNet = new SubcontractorSafetyNetAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(arbitrationClause)
+            address(signatureClause), address(escrowClause), address(arbitrationClause)
         );
 
         // Create accounts
@@ -104,21 +101,15 @@ contract SubcontractorSafetyNetAgreementTest is Test {
 
     /// @notice Create a proxy-based agreement
     function _createProxyAgreement() internal returns (SubcontractorSafetyNetAgreement) {
-        return _createProxyAgreement(
-            PAYMENT_AMOUNT,
-            block.timestamp + WORK_DEADLINE_OFFSET,
-            REVIEW_PERIOD_DAYS
-        );
+        return _createProxyAgreement(PAYMENT_AMOUNT, block.timestamp + WORK_DEADLINE_OFFSET, REVIEW_PERIOD_DAYS);
     }
 
-    function _createProxyAgreement(
-        uint256 paymentAmount,
-        uint256 workDeadline,
-        uint256 reviewPeriodDays
-    ) internal returns (SubcontractorSafetyNetAgreement) {
-        SubcontractorSafetyNetAgreement agreement = SubcontractorSafetyNetAgreement(
-            payable(Clones.clone(address(safetyNet)))
-        );
+    function _createProxyAgreement(uint256 paymentAmount, uint256 workDeadline, uint256 reviewPeriodDays)
+        internal
+        returns (SubcontractorSafetyNetAgreement)
+    {
+        SubcontractorSafetyNetAgreement agreement =
+            SubcontractorSafetyNetAgreement(payable(Clones.clone(address(safetyNet))));
 
         vm.deal(address(agreement), 100 ether); // Fund for escrow
 
@@ -139,18 +130,13 @@ contract SubcontractorSafetyNetAgreementTest is Test {
 
     /// @notice Create a singleton instance (returns instanceId)
     function _createSingletonInstance() internal returns (uint256 instanceId) {
-        return _createSingletonInstance(
-            PAYMENT_AMOUNT,
-            block.timestamp + WORK_DEADLINE_OFFSET,
-            REVIEW_PERIOD_DAYS
-        );
+        return _createSingletonInstance(PAYMENT_AMOUNT, block.timestamp + WORK_DEADLINE_OFFSET, REVIEW_PERIOD_DAYS);
     }
 
-    function _createSingletonInstance(
-        uint256 paymentAmount,
-        uint256 workDeadline,
-        uint256 reviewPeriodDays
-    ) internal returns (uint256 instanceId) {
+    function _createSingletonInstance(uint256 paymentAmount, uint256 workDeadline, uint256 reviewPeriodDays)
+        internal
+        returns (uint256 instanceId)
+    {
         return safetyNet.createInstance(
             client,
             subcontractor,
@@ -1196,9 +1182,7 @@ contract SubcontractorSafetyNetFuzzTest is Test {
         escrowClause = new EscrowClauseLogicV3();
         arbitrationClause = new ArbitrationClauseLogicV3();
         safetyNet = new SubcontractorSafetyNetAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(arbitrationClause)
+            address(signatureClause), address(escrowClause), address(arbitrationClause)
         );
         vm.deal(address(safetyNet), 1000 ether);
     }
@@ -1228,7 +1212,7 @@ contract SubcontractorSafetyNetFuzzTest is Test {
             keccak256("doc")
         );
 
-        (,,,,,, , uint256 amount,,,) = safetyNet.getInstance(instanceId);
+        (,,,,,,, uint256 amount,,,) = safetyNet.getInstance(instanceId);
         assertEq(amount, paymentAmount);
     }
 
@@ -1353,9 +1337,7 @@ contract SubcontractorSafetyNetInvariantTest is Test {
         escrowClause = new EscrowClauseLogicV3();
         arbitrationClause = new ArbitrationClauseLogicV3();
         safetyNet = new SubcontractorSafetyNetAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(arbitrationClause)
+            address(signatureClause), address(escrowClause), address(arbitrationClause)
         );
         vm.deal(address(safetyNet), 1000 ether);
 

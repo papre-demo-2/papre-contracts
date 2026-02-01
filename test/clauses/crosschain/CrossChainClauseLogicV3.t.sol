@@ -7,7 +7,6 @@ import {CrossChainClauseLogicV3} from "../../../src/clauses/crosschain/CrossChai
 /// @title CrossChainClauseLogicV3 Unit Tests
 /// @notice Tests for the v3 cross-chain messaging clause with ERC-7201 storage
 contract CrossChainClauseLogicV3Test is Test {
-
     CrossChainClauseLogicV3 public clause;
 
     // Test accounts
@@ -22,11 +21,11 @@ contract CrossChainClauseLogicV3Test is Test {
     uint64 constant CHAIN_SELECTOR = 16015286601757825753;
 
     // State constants (matching the contract)
-    uint16 constant PENDING   = 1 << 1;  // 0x0002
-    uint16 constant SENT      = 1 << 4;  // 0x0010
-    uint16 constant CONFIRMED = 1 << 5;  // 0x0020
-    uint16 constant RECEIVED  = 1 << 6;  // 0x0040
-    uint16 constant CANCELLED = 1 << 3;  // 0x0008
+    uint16 constant PENDING = 1 << 1; // 0x0002
+    uint16 constant SENT = 1 << 4; // 0x0010
+    uint16 constant CONFIRMED = 1 << 5; // 0x0020
+    uint16 constant RECEIVED = 1 << 6; // 0x0040
+    uint16 constant CANCELLED = 1 << 3; // 0x0008
 
     // Action constants
     uint8 constant ACTION_RELEASE_ESCROW = 2;
@@ -223,12 +222,7 @@ contract CrossChainClauseLogicV3Test is Test {
         bytes memory extraData = abi.encode(bytes32(uint256(123)));
 
         clause.actionProcessIncoming(
-            INSTANCE_1,
-            CHAIN_SELECTOR,
-            remoteAgreement,
-            ACTION_RELEASE_ESCROW,
-            contentHash,
-            extraData
+            INSTANCE_1, CHAIN_SELECTOR, remoteAgreement, ACTION_RELEASE_ESCROW, contentHash, extraData
         );
 
         assertEq(clause.queryStatus(INSTANCE_1), RECEIVED);
@@ -242,23 +236,13 @@ contract CrossChainClauseLogicV3Test is Test {
 
     function test_ActionProcessIncoming_OnlyOncePerInstance() public {
         clause.actionProcessIncoming(
-            INSTANCE_1,
-            CHAIN_SELECTOR,
-            remoteAgreement,
-            ACTION_RELEASE_ESCROW,
-            keccak256("doc"),
-            ""
+            INSTANCE_1, CHAIN_SELECTOR, remoteAgreement, ACTION_RELEASE_ESCROW, keccak256("doc"), ""
         );
 
         // Can't process same instance again
         vm.expectRevert("Already processed");
         clause.actionProcessIncoming(
-            INSTANCE_1,
-            CHAIN_SELECTOR,
-            remoteAgreement,
-            ACTION_RELEASE_ESCROW,
-            keccak256("doc2"),
-            ""
+            INSTANCE_1, CHAIN_SELECTOR, remoteAgreement, ACTION_RELEASE_ESCROW, keccak256("doc2"), ""
         );
     }
 
@@ -292,12 +276,7 @@ contract CrossChainClauseLogicV3Test is Test {
 
     function test_HandoffAction_Success() public {
         clause.actionProcessIncoming(
-            INSTANCE_1,
-            CHAIN_SELECTOR,
-            remoteAgreement,
-            ACTION_RELEASE_ESCROW,
-            keccak256("doc"),
-            ""
+            INSTANCE_1, CHAIN_SELECTOR, remoteAgreement, ACTION_RELEASE_ESCROW, keccak256("doc"), ""
         );
 
         assertEq(clause.handoffAction(INSTANCE_1), ACTION_RELEASE_ESCROW);
@@ -307,12 +286,7 @@ contract CrossChainClauseLogicV3Test is Test {
         bytes memory extraData = abi.encode(bytes32(uint256(123)));
 
         clause.actionProcessIncoming(
-            INSTANCE_1,
-            CHAIN_SELECTOR,
-            remoteAgreement,
-            ACTION_RELEASE_ESCROW,
-            keccak256("doc"),
-            extraData
+            INSTANCE_1, CHAIN_SELECTOR, remoteAgreement, ACTION_RELEASE_ESCROW, keccak256("doc"), extraData
         );
 
         assertEq(clause.handoffExtraData(INSTANCE_1), extraData);
@@ -322,12 +296,7 @@ contract CrossChainClauseLogicV3Test is Test {
         bytes32 contentHash = keccak256("document");
 
         clause.actionProcessIncoming(
-            INSTANCE_1,
-            CHAIN_SELECTOR,
-            remoteAgreement,
-            ACTION_RELEASE_ESCROW,
-            contentHash,
-            ""
+            INSTANCE_1, CHAIN_SELECTOR, remoteAgreement, ACTION_RELEASE_ESCROW, contentHash, ""
         );
 
         assertEq(clause.handoffContentHash(INSTANCE_1), contentHash);
@@ -335,12 +304,7 @@ contract CrossChainClauseLogicV3Test is Test {
 
     function test_HandoffSourceAgreement_Success() public {
         clause.actionProcessIncoming(
-            INSTANCE_1,
-            CHAIN_SELECTOR,
-            remoteAgreement,
-            ACTION_RELEASE_ESCROW,
-            keccak256("doc"),
-            ""
+            INSTANCE_1, CHAIN_SELECTOR, remoteAgreement, ACTION_RELEASE_ESCROW, keccak256("doc"), ""
         );
 
         assertEq(clause.handoffSourceAgreement(INSTANCE_1), remoteAgreement);
@@ -393,12 +357,7 @@ contract CrossChainClauseLogicV3Test is Test {
 
     function test_QueryIsReceived_True() public {
         clause.actionProcessIncoming(
-            INSTANCE_1,
-            CHAIN_SELECTOR,
-            remoteAgreement,
-            ACTION_RELEASE_ESCROW,
-            keccak256("doc"),
-            ""
+            INSTANCE_1, CHAIN_SELECTOR, remoteAgreement, ACTION_RELEASE_ESCROW, keccak256("doc"), ""
         );
         assertTrue(clause.queryIsReceived(INSTANCE_1));
     }
@@ -413,13 +372,7 @@ contract CrossChainClauseLogicV3Test is Test {
         clause.intakeController(INSTANCE_1, controller);
         clause.intakeReady(INSTANCE_1);
 
-        (
-            uint16 status,
-            uint64 destChain,
-            address remote,
-            uint8 action,
-            bytes32 hash
-        ) = clause.queryConfig(INSTANCE_1);
+        (uint16 status, uint64 destChain, address remote, uint8 action, bytes32 hash) = clause.queryConfig(INSTANCE_1);
 
         assertEq(status, PENDING);
         assertEq(destChain, CHAIN_SELECTOR);
@@ -448,12 +401,7 @@ contract CrossChainClauseLogicV3Test is Test {
 
         // Setup instance 2 as received
         clause.actionProcessIncoming(
-            INSTANCE_2,
-            CHAIN_SELECTOR,
-            remoteAgreement,
-            ACTION_RELEASE_ESCROW,
-            keccak256("doc"),
-            ""
+            INSTANCE_2, CHAIN_SELECTOR, remoteAgreement, ACTION_RELEASE_ESCROW, keccak256("doc"), ""
         );
 
         // Verify different states

@@ -65,9 +65,9 @@ contract StreamingClauseLogicV3 is ClauseBase {
 
     // CONFIGURING = 0 (implicit - before intakeReady)
     // PENDING = 0x0002 (from ClauseBase) - awaiting deposit
-    uint16 internal constant STREAMING = 1 << 2;     // 0x0004 - actively streaming
-    uint16 internal constant COMPLETED = 1 << 3;     // 0x0008 - all funds claimed
-    uint16 internal constant STREAM_CANCELLED = 1 << 4;  // 0x0010 - cancelled with split
+    uint16 internal constant STREAMING = 1 << 2; // 0x0004 - actively streaming
+    uint16 internal constant COMPLETED = 1 << 3; // 0x0008 - all funds claimed
+    uint16 internal constant STREAM_CANCELLED = 1 << 4; // 0x0010 - cancelled with split
 
     // =============================================================
     // ERRORS
@@ -101,32 +101,16 @@ contract StreamingClauseLogicV3 is ClauseBase {
     );
 
     event StreamStarted(
-        bytes32 indexed instanceId,
-        address indexed sender,
-        uint256 deposit,
-        uint48 startTime,
-        uint48 stopTime
+        bytes32 indexed instanceId, address indexed sender, uint256 deposit, uint48 startTime, uint48 stopTime
     );
 
-    event TokensClaimed(
-        bytes32 indexed instanceId,
-        address indexed recipient,
-        uint256 amount,
-        uint256 totalClaimed
-    );
+    event TokensClaimed(bytes32 indexed instanceId, address indexed recipient, uint256 amount, uint256 totalClaimed);
 
     event StreamCancelled(
-        bytes32 indexed instanceId,
-        address indexed cancelledBy,
-        uint256 toRecipient,
-        uint256 toSender
+        bytes32 indexed instanceId, address indexed cancelledBy, uint256 toRecipient, uint256 toSender
     );
 
-    event StreamCompleted(
-        bytes32 indexed instanceId,
-        address indexed recipient,
-        uint256 totalAmount
-    );
+    event StreamCompleted(bytes32 indexed instanceId, address indexed recipient, uint256 totalAmount);
 
     // =============================================================
     // ERC-7201 NAMESPACED STORAGE
@@ -159,8 +143,7 @@ contract StreamingClauseLogicV3 is ClauseBase {
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.clause.streaming.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant STORAGE_SLOT =
-        0x7d3e8f2a1b4c5d6e9f0a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d00;
+    bytes32 private constant STORAGE_SLOT = 0x7d3e8f2a1b4c5d6e9f0a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d00;
 
     function _getStorage() internal pure returns (StreamingStorage storage $) {
         assembly {
@@ -301,13 +284,7 @@ contract StreamingClauseLogicV3 is ClauseBase {
 
         $.status[instanceId] = STREAMING;
 
-        emit StreamStarted(
-            instanceId,
-            sender,
-            requiredDeposit,
-            $.startTime[instanceId],
-            $.stopTime[instanceId]
-        );
+        emit StreamStarted(instanceId, sender, requiredDeposit, $.startTime[instanceId], $.stopTime[instanceId]);
     }
 
     /// @notice Claim streamed tokens (recipient only)
@@ -434,7 +411,11 @@ contract StreamingClauseLogicV3 is ClauseBase {
     /// @param instanceId Unique identifier for this stream instance
     /// @return toRecipient Amount sent to recipient
     /// @return toSender Amount refunded to sender
-    function handoffCancellationSplit(bytes32 instanceId) external view returns (uint256 toRecipient, uint256 toSender) {
+    function handoffCancellationSplit(bytes32 instanceId)
+        external
+        view
+        returns (uint256 toRecipient, uint256 toSender)
+    {
         StreamingStorage storage $ = _getStorage();
         require($.status[instanceId] == STREAM_CANCELLED, "Wrong state");
 
@@ -587,13 +568,11 @@ contract StreamingClauseLogicV3 is ClauseBase {
     /// @return available Available to claim
     /// @return withdrawn Already withdrawn
     /// @return remaining Remaining to stream
-    function queryStreamState(bytes32 instanceId) external view returns (
-        uint16 status,
-        uint256 streamed,
-        uint256 available,
-        uint256 withdrawn,
-        uint256 remaining
-    ) {
+    function queryStreamState(bytes32 instanceId)
+        external
+        view
+        returns (uint16 status, uint256 streamed, uint256 available, uint256 withdrawn, uint256 remaining)
+    {
         StreamingStorage storage $ = _getStorage();
         status = $.status[instanceId];
         streamed = _calculateStreamed($, instanceId);
@@ -619,11 +598,11 @@ contract StreamingClauseLogicV3 is ClauseBase {
     /// @param instanceId Unique identifier for this stream instance
     /// @param timestamp The timestamp to calculate at
     /// @return The streamed amount
-    function _calculateStreamedAt(
-        StreamingStorage storage $,
-        bytes32 instanceId,
-        uint256 timestamp
-    ) internal view returns (uint256) {
+    function _calculateStreamedAt(StreamingStorage storage $, bytes32 instanceId, uint256 timestamp)
+        internal
+        view
+        returns (uint256)
+    {
         uint48 startTime = $.startTime[instanceId];
         uint48 stopTime = $.stopTime[instanceId];
         uint256 deposit = $.deposit[instanceId];

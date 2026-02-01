@@ -49,16 +49,15 @@ import {ClauseBase} from "../../base/ClauseBase.sol";
 ///      │   (0x0040)     │
 ///      └────────────────┘
 contract CrossChainClauseLogicV3 is ClauseBase {
-
     // =============================================================
     // EXTENDED STATES (bitmask)
     // =============================================================
 
     // Note: PENDING (0x0002), COMPLETE (0x0004), CANCELLED (0x0008) from ClauseBase
     // We define cross-chain-specific states:
-    uint16 internal constant SENT = 1 << 4;       // 0x0010 - message sent via CCIP
-    uint16 internal constant CONFIRMED = 1 << 5;  // 0x0020 - execution confirmed
-    uint16 internal constant RECEIVED = 1 << 6;   // 0x0040 - incoming message processed
+    uint16 internal constant SENT = 1 << 4; // 0x0010 - message sent via CCIP
+    uint16 internal constant CONFIRMED = 1 << 5; // 0x0020 - execution confirmed
+    uint16 internal constant RECEIVED = 1 << 6; // 0x0040 - incoming message processed
 
     // =============================================================
     // ACTION TYPES
@@ -90,30 +89,18 @@ contract CrossChainClauseLogicV3 is ClauseBase {
     // =============================================================
 
     event CrossChainConfigured(
-        bytes32 indexed instanceId,
-        uint64 destinationChain,
-        address remoteAgreement,
-        uint8 action
+        bytes32 indexed instanceId, uint64 destinationChain, address remoteAgreement, uint8 action
     );
 
     event CrossChainMessageSent(
-        bytes32 indexed instanceId,
-        bytes32 indexed messageId,
-        uint64 destinationChain,
-        address remoteAgreement
+        bytes32 indexed instanceId, bytes32 indexed messageId, uint64 destinationChain, address remoteAgreement
     );
 
     event CrossChainMessageReceived(
-        bytes32 indexed instanceId,
-        uint64 sourceChain,
-        address sourceAgreement,
-        uint8 action
+        bytes32 indexed instanceId, uint64 sourceChain, address sourceAgreement, uint8 action
     );
 
-    event CrossChainConfirmed(
-        bytes32 indexed instanceId,
-        bytes32 indexed messageId
-    );
+    event CrossChainConfirmed(bytes32 indexed instanceId, bytes32 indexed messageId);
 
     // =============================================================
     // ERC-7201 NAMESPACED STORAGE
@@ -146,8 +133,7 @@ contract CrossChainClauseLogicV3 is ClauseBase {
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.clause.crosschain.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant STORAGE_SLOT =
-        0x8f3b2c1d0e4a5f6789012345678901234567890123456789012345678901ab00;
+    bytes32 private constant STORAGE_SLOT = 0x8f3b2c1d0e4a5f6789012345678901234567890123456789012345678901ab00;
 
     function _getStorage() internal pure returns (CrossChainStorage storage $) {
         assembly {
@@ -230,10 +216,7 @@ contract CrossChainClauseLogicV3 is ClauseBase {
         $.status[instanceId] = PENDING;
 
         emit CrossChainConfigured(
-            instanceId,
-            $.destinationChain[instanceId],
-            $.remoteAgreement[instanceId],
-            $.action[instanceId]
+            instanceId, $.destinationChain[instanceId], $.remoteAgreement[instanceId], $.action[instanceId]
         );
     }
 
@@ -264,10 +247,7 @@ contract CrossChainClauseLogicV3 is ClauseBase {
         $.status[instanceId] = SENT;
 
         emit CrossChainMessageSent(
-            instanceId,
-            _messageId,
-            $.destinationChain[instanceId],
-            $.remoteAgreement[instanceId]
+            instanceId, _messageId, $.destinationChain[instanceId], $.remoteAgreement[instanceId]
         );
     }
 
@@ -311,12 +291,7 @@ contract CrossChainClauseLogicV3 is ClauseBase {
         $.receivedAt[instanceId] = block.timestamp;
         $.status[instanceId] = RECEIVED;
 
-        emit CrossChainMessageReceived(
-            instanceId,
-            _sourceChain,
-            _sourceAgreement,
-            _action
-        );
+        emit CrossChainMessageReceived(instanceId, _sourceChain, _sourceAgreement, _action);
     }
 
     /// @notice Cancel a pending cross-chain message
@@ -487,13 +462,11 @@ contract CrossChainClauseLogicV3 is ClauseBase {
     /// @return remoteAgreement Remote agreement address
     /// @return action Action type
     /// @return contentHash Content hash
-    function queryConfig(bytes32 instanceId) external view returns (
-        uint16 status,
-        uint64 destinationChain,
-        address remoteAgreement,
-        uint8 action,
-        bytes32 contentHash
-    ) {
+    function queryConfig(bytes32 instanceId)
+        external
+        view
+        returns (uint16 status, uint64 destinationChain, address remoteAgreement, uint8 action, bytes32 contentHash)
+    {
         CrossChainStorage storage $ = _getStorage();
         return (
             $.status[instanceId],

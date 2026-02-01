@@ -42,10 +42,7 @@ contract FreelanceServiceAgreementTest is Test {
 
     // Events to test
     event InstanceCreated(
-        uint256 indexed instanceId,
-        address indexed client,
-        address indexed freelancer,
-        uint256 parentInstanceId
+        uint256 indexed instanceId, address indexed client, address indexed freelancer, uint256 parentInstanceId
     );
     event AgreementConfigured(
         uint256 indexed instanceId,
@@ -68,11 +65,8 @@ contract FreelanceServiceAgreementTest is Test {
         declarativeClause = new DeclarativeClauseLogicV3();
 
         // Deploy implementation (works as both singleton and proxy implementation)
-        implementation = new FreelanceServiceAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(declarativeClause)
-        );
+        implementation =
+            new FreelanceServiceAgreement(address(signatureClause), address(escrowClause), address(declarativeClause));
 
         // Create test accounts with known private keys for signing
         clientPk = 0x1;
@@ -90,7 +84,9 @@ contract FreelanceServiceAgreementTest is Test {
     // ═══════════════════════════════════════════════════════════════
 
     function _createProxyAgreement() internal returns (FreelanceServiceAgreement) {
-        return _createProxyAgreement(client, freelancer, SCOPE_HASH, PAYMENT_AMOUNT, address(0), KILL_FEE_BPS, DOCUMENT_CID);
+        return _createProxyAgreement(
+            client, freelancer, SCOPE_HASH, PAYMENT_AMOUNT, address(0), KILL_FEE_BPS, DOCUMENT_CID
+        );
     }
 
     function _createProxyAgreement(
@@ -102,19 +98,9 @@ contract FreelanceServiceAgreementTest is Test {
         uint256 _killFeeBps,
         bytes32 _documentCID
     ) internal returns (FreelanceServiceAgreement) {
-        FreelanceServiceAgreement agreement = FreelanceServiceAgreement(
-            payable(Clones.clone(address(implementation)))
-        );
+        FreelanceServiceAgreement agreement = FreelanceServiceAgreement(payable(Clones.clone(address(implementation))));
 
-        agreement.initialize(
-            _client,
-            _freelancer,
-            _scopeHash,
-            _paymentAmount,
-            _paymentToken,
-            _killFeeBps,
-            _documentCID
-        );
+        agreement.initialize(_client, _freelancer, _scopeHash, _paymentAmount, _paymentToken, _killFeeBps, _documentCID);
 
         return agreement;
     }
@@ -143,7 +129,7 @@ contract FreelanceServiceAgreementTest is Test {
         bytes memory signature = _signMessage(pk, scopeHash);
 
         vm.prank(vm.addr(pk));
-        agreement.signTerms(0, signature);  // Use instance 0 for proxy mode
+        agreement.signTerms(0, signature); // Use instance 0 for proxy mode
     }
 
     function _signTermsSingleton(uint256 instanceId, uint256 pk) internal {
@@ -190,15 +176,7 @@ contract FreelanceServiceAgreementTest is Test {
         FreelanceServiceAgreement agreement = _createProxyAgreement();
 
         vm.expectRevert();
-        agreement.initialize(
-            client,
-            freelancer,
-            SCOPE_HASH,
-            PAYMENT_AMOUNT,
-            address(0),
-            KILL_FEE_BPS,
-            DOCUMENT_CID
-        );
+        agreement.initialize(client, freelancer, SCOPE_HASH, PAYMENT_AMOUNT, address(0), KILL_FEE_BPS, DOCUMENT_CID);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -225,14 +203,7 @@ contract FreelanceServiceAgreementTest is Test {
 
         // Create second instance with different scope
         uint256 id2 = implementation.createInstance(
-            client,
-            freelancer,
-            keccak256("Project B"),
-            2 ether,
-            address(0),
-            3000,
-            0,
-            keccak256("doc2")
+            client, freelancer, keccak256("Project B"), 2 ether, address(0), 3000, 0, keccak256("doc2")
         );
 
         assertEq(id1, 1);
@@ -249,14 +220,7 @@ contract FreelanceServiceAgreementTest is Test {
     function test_Singleton_GetUserInstances() public {
         uint256 id1 = _createSingletonInstance();
         uint256 id2 = implementation.createInstance(
-            client,
-            freelancer,
-            keccak256("Project B"),
-            2 ether,
-            address(0),
-            3000,
-            0,
-            keccak256("doc2")
+            client, freelancer, keccak256("Project B"), 2 ether, address(0), 3000, 0, keccak256("doc2")
         );
 
         uint256[] memory clientInstances = implementation.getUserInstances(client);
@@ -583,7 +547,8 @@ contract FreelanceServiceAgreementTest is Test {
         implementation.approveAndRelease(instanceId, signature);
 
         // 6. Verify final state
-        (bool termsAccepted, bool workDelivered, bool clientApproved, bool cancelled) = implementation.getInstanceState(instanceId);
+        (bool termsAccepted, bool workDelivered, bool clientApproved, bool cancelled) =
+            implementation.getInstanceState(instanceId);
         assertTrue(termsAccepted);
         assertTrue(workDelivered);
         assertTrue(clientApproved);
@@ -609,8 +574,12 @@ contract FreelanceServiceAgreementTest is Test {
         bytes32 doc1 = keccak256("document1");
         bytes32 doc2 = keccak256("document2");
 
-        uint256 id1 = implementation.createInstance(client, freelancer, SCOPE_HASH, PAYMENT_AMOUNT, address(0), KILL_FEE_BPS, 0, doc1);
-        uint256 id2 = implementation.createInstance(client, freelancer, SCOPE_HASH, PAYMENT_AMOUNT, address(0), KILL_FEE_BPS, 0, doc2);
+        uint256 id1 = implementation.createInstance(
+            client, freelancer, SCOPE_HASH, PAYMENT_AMOUNT, address(0), KILL_FEE_BPS, 0, doc1
+        );
+        uint256 id2 = implementation.createInstance(
+            client, freelancer, SCOPE_HASH, PAYMENT_AMOUNT, address(0), KILL_FEE_BPS, 0, doc2
+        );
 
         assertEq(implementation.getDocumentCID(id1), doc1);
         assertEq(implementation.getDocumentCID(id2), doc2);
@@ -710,11 +679,8 @@ contract FreelanceServiceAgreementFuzzTest is Test {
         signatureClause = new SignatureClauseLogicV3();
         escrowClause = new EscrowClauseLogicV3();
         declarativeClause = new DeclarativeClauseLogicV3();
-        implementation = new FreelanceServiceAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(declarativeClause)
-        );
+        implementation =
+            new FreelanceServiceAgreement(address(signatureClause), address(escrowClause), address(declarativeClause));
     }
 
     function testFuzz_Initialize_VariablePayments(uint256 paymentAmount) public {
@@ -726,19 +692,9 @@ contract FreelanceServiceAgreementFuzzTest is Test {
         address freelancer = vm.addr(freelancerPk);
         vm.deal(client, paymentAmount + 1 ether);
 
-        FreelanceServiceAgreement agreement = FreelanceServiceAgreement(
-            payable(Clones.clone(address(implementation)))
-        );
+        FreelanceServiceAgreement agreement = FreelanceServiceAgreement(payable(Clones.clone(address(implementation))));
 
-        agreement.initialize(
-            client,
-            freelancer,
-            keccak256("test"),
-            paymentAmount,
-            address(0),
-            1000,
-            keccak256("doc")
-        );
+        agreement.initialize(client, freelancer, keccak256("test"), paymentAmount, address(0), 1000, keccak256("doc"));
 
         (uint256 amount,) = agreement.getPaymentDetails();
         assertEq(amount, paymentAmount);
@@ -755,20 +711,10 @@ contract FreelanceServiceAgreementFuzzTest is Test {
         vm.deal(client, paymentAmount + 1 ether);
         vm.deal(freelancer, 1 ether);
 
-        FreelanceServiceAgreement agreement = FreelanceServiceAgreement(
-            payable(Clones.clone(address(implementation)))
-        );
+        FreelanceServiceAgreement agreement = FreelanceServiceAgreement(payable(Clones.clone(address(implementation))));
 
         bytes32 scopeHash = keccak256(abi.encode(paymentAmount, killFeeBps));
-        agreement.initialize(
-            client,
-            freelancer,
-            scopeHash,
-            paymentAmount,
-            address(0),
-            killFeeBps,
-            keccak256("doc")
-        );
+        agreement.initialize(client, freelancer, scopeHash, paymentAmount, address(0), killFeeBps, keccak256("doc"));
 
         // Sign terms
         bytes memory clientSig = _signMessage(clientPk, scopeHash);
@@ -854,11 +800,8 @@ contract FreelanceServiceAgreementInvariantTest is Test {
         signatureClause = new SignatureClauseLogicV3();
         escrowClause = new EscrowClauseLogicV3();
         declarativeClause = new DeclarativeClauseLogicV3();
-        implementation = new FreelanceServiceAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(declarativeClause)
-        );
+        implementation =
+            new FreelanceServiceAgreement(address(signatureClause), address(escrowClause), address(declarativeClause));
 
         handler = new FreelanceServiceAgreementHandler(implementation);
 
@@ -911,14 +854,7 @@ contract FreelanceServiceAgreementHandler is Test {
         bytes32 scopeHash = keccak256(abi.encode("scope", seed));
 
         implementation.createInstance(
-            client,
-            freelancer,
-            scopeHash,
-            1 ether,
-            address(0),
-            2000,
-            0,
-            keccak256(abi.encode("doc", seed))
+            client, freelancer, scopeHash, 1 ether, address(0), 2000, 0, keccak256(abi.encode("doc", seed))
         );
 
         instancesCreated++;

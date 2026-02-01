@@ -38,11 +38,7 @@ contract RetainerAgreementTest is Test {
     bytes32 constant DOCUMENT_CID = keccak256("ipfs://QmRetainerDocument");
 
     // Events (match contract)
-    event InstanceCreated(
-        uint256 indexed instanceId,
-        address indexed client,
-        address indexed contractor
-    );
+    event InstanceCreated(uint256 indexed instanceId, address indexed client, address indexed contractor);
     event RetainerConfigured(
         uint256 indexed instanceId,
         address indexed client,
@@ -64,10 +60,7 @@ contract RetainerAgreementTest is Test {
         escrowClause = new EscrowClauseLogicV3();
 
         // Deploy retainer singleton (2 args: signatureClause, escrowClause)
-        retainer = new RetainerAgreement(
-            address(signatureClause),
-            address(escrowClause)
-        );
+        retainer = new RetainerAgreement(address(signatureClause), address(escrowClause));
 
         // Create accounts
         clientPk = 0x1;
@@ -89,14 +82,11 @@ contract RetainerAgreementTest is Test {
         return _createProxyAgreement(MONTHLY_RATE, PERIOD_DURATION, NOTICE_PERIOD_DAYS);
     }
 
-    function _createProxyAgreement(
-        uint256 monthlyRate,
-        uint256 periodDuration,
-        uint256 noticePeriodDays
-    ) internal returns (RetainerAgreement) {
-        RetainerAgreement agreement = RetainerAgreement(
-            payable(Clones.clone(address(retainer)))
-        );
+    function _createProxyAgreement(uint256 monthlyRate, uint256 periodDuration, uint256 noticePeriodDays)
+        internal
+        returns (RetainerAgreement)
+    {
+        RetainerAgreement agreement = RetainerAgreement(payable(Clones.clone(address(retainer))));
 
         vm.deal(address(agreement), 100 ether); // Fund for escrow
 
@@ -118,11 +108,10 @@ contract RetainerAgreementTest is Test {
         return _createSingletonInstance(MONTHLY_RATE, PERIOD_DURATION, NOTICE_PERIOD_DAYS);
     }
 
-    function _createSingletonInstance(
-        uint256 monthlyRate,
-        uint256 periodDuration,
-        uint256 noticePeriodDays
-    ) internal returns (uint256 instanceId) {
+    function _createSingletonInstance(uint256 monthlyRate, uint256 periodDuration, uint256 noticePeriodDays)
+        internal
+        returns (uint256 instanceId)
+    {
         return retainer.createInstance(
             client,
             contractor,
@@ -141,15 +130,13 @@ contract RetainerAgreementTest is Test {
     }
 
     function _getTermsHash() internal pure returns (bytes32) {
-        return keccak256(abi.encode(
-            MONTHLY_RATE,
-            PERIOD_DURATION,
-            NOTICE_PERIOD_DAYS
-        ));
+        return keccak256(abi.encode(MONTHLY_RATE, PERIOD_DURATION, NOTICE_PERIOD_DAYS));
     }
 
     function _getTermsHash(uint256 monthlyRate, uint256 periodDuration, uint256 noticePeriodDays)
-        internal pure returns (bytes32)
+        internal
+        pure
+        returns (bytes32)
     {
         return keccak256(abi.encode(monthlyRate, periodDuration, noticePeriodDays));
     }
@@ -262,7 +249,7 @@ contract RetainerAgreementTest is Test {
             DOCUMENT_CID
         );
 
-        (,,,,,, , uint256 periodDuration,) = retainer.getInstance(instanceId);
+        (,,,,,,, uint256 periodDuration,) = retainer.getInstance(instanceId);
         assertEq(periodDuration, 30 days);
     }
 
@@ -275,16 +262,8 @@ contract RetainerAgreementTest is Test {
 
         assertTrue(agreement.isProxyMode());
 
-        (
-            uint256 instanceNumber,
-            ,
-            ,
-            address _client,
-            address _contractor,
-            ,
-            uint256 monthlyRate,
-            ,
-        ) = agreement.getInstance(0);
+        (uint256 instanceNumber,,, address _client, address _contractor,, uint256 monthlyRate,,) =
+            agreement.getInstance(0);
 
         assertEq(instanceNumber, 0);
         assertEq(_client, client);
@@ -297,13 +276,7 @@ contract RetainerAgreementTest is Test {
 
         vm.expectRevert();
         agreement.initialize(
-            client,
-            contractor,
-            address(0),
-            MONTHLY_RATE,
-            PERIOD_DURATION,
-            NOTICE_PERIOD_DAYS,
-            DOCUMENT_CID
+            client, contractor, address(0), MONTHLY_RATE, PERIOD_DURATION, NOTICE_PERIOD_DAYS, DOCUMENT_CID
         );
     }
 
@@ -312,13 +285,7 @@ contract RetainerAgreementTest is Test {
 
         vm.expectRevert(RetainerAgreement.SingletonModeOnly.selector);
         agreement.createInstance(
-            client,
-            contractor,
-            address(0),
-            MONTHLY_RATE,
-            PERIOD_DURATION,
-            NOTICE_PERIOD_DAYS,
-            DOCUMENT_CID
+            client, contractor, address(0), MONTHLY_RATE, PERIOD_DURATION, NOTICE_PERIOD_DAYS, DOCUMENT_CID
         );
     }
 
@@ -393,15 +360,8 @@ contract RetainerAgreementTest is Test {
         vm.prank(client);
         retainer.fundPeriod{value: MONTHLY_RATE}(instanceId);
 
-        (
-            bool termsAccepted,
-            bool funded,
-            uint256 currentPeriodStart,
-            uint256 currentPeriodEnd,
-            ,
-            ,
-            ,
-        ) = retainer.getInstanceState(instanceId);
+        (bool termsAccepted, bool funded, uint256 currentPeriodStart, uint256 currentPeriodEnd,,,,) =
+            retainer.getInstanceState(instanceId);
 
         assertTrue(termsAccepted);
         assertTrue(funded);
@@ -489,15 +449,7 @@ contract RetainerAgreementTest is Test {
         // Warp halfway through period
         vm.warp(block.timestamp + PERIOD_DURATION / 2);
 
-        (
-            ,
-            ,
-            ,
-            ,
-            uint256 streamedAmount,
-            uint256 claimedAmount,
-            ,
-        ) = retainer.getInstanceState(instanceId);
+        (,,,, uint256 streamedAmount, uint256 claimedAmount,,) = retainer.getInstanceState(instanceId);
 
         assertApproxEqRel(streamedAmount, MONTHLY_RATE / 2, 0.01e18);
         assertEq(claimedAmount, 0);
@@ -517,7 +469,7 @@ contract RetainerAgreementTest is Test {
         retainer.claimStreamed(instanceId);
 
         // After claiming, claimedAmount should update
-        (,,,, , uint256 claimedAmount,,) = retainer.getInstanceState(instanceId);
+        (,,,,, uint256 claimedAmount,,) = retainer.getInstanceState(instanceId);
         assertApproxEqRel(claimedAmount, expectedClaim, 0.01e18);
     }
 
@@ -534,7 +486,7 @@ contract RetainerAgreementTest is Test {
         vm.prank(contractor);
         retainer.claimStreamed(instanceId);
 
-        (,,,, , uint256 claimedAmount,,) = retainer.getInstanceState(instanceId);
+        (,,,,, uint256 claimedAmount,,) = retainer.getInstanceState(instanceId);
         assertEq(claimedAmount, MONTHLY_RATE);
     }
 
@@ -547,7 +499,7 @@ contract RetainerAgreementTest is Test {
         vm.prank(contractor);
         retainer.claimStreamed(instanceId);
 
-        (,,,, , uint256 claimed1,,) = retainer.getInstanceState(instanceId);
+        (,,,,, uint256 claimed1,,) = retainer.getInstanceState(instanceId);
         assertApproxEqRel(claimed1, MONTHLY_RATE / 4, 0.01e18);
 
         // Second claim at 75%
@@ -555,7 +507,7 @@ contract RetainerAgreementTest is Test {
         vm.prank(contractor);
         retainer.claimStreamed(instanceId);
 
-        (,,,, , uint256 claimed2,,) = retainer.getInstanceState(instanceId);
+        (,,,,, uint256 claimed2,,) = retainer.getInstanceState(instanceId);
         assertApproxEqRel(claimed2, (MONTHLY_RATE * 3) / 4, 0.01e18);
     }
 
@@ -820,7 +772,7 @@ contract RetainerAgreementTest is Test {
         vm.prank(contractor);
         retainer.claimStreamed(instanceId);
 
-        (,,,, , uint256 claimedAmount,,) = retainer.getInstanceState(instanceId);
+        (,,,,, uint256 claimedAmount,,) = retainer.getInstanceState(instanceId);
         assertEq(claimedAmount, MONTHLY_RATE);
     }
 
@@ -864,8 +816,8 @@ contract RetainerAgreementTest is Test {
         retainer.executeCancel(id1);
 
         // id2 should be unaffected
-        (,, , , , , , bool cancelled1) = retainer.getInstanceState(id1);
-        (,, , , , , , bool cancelled2) = retainer.getInstanceState(id2);
+        (,,,,,,, bool cancelled1) = retainer.getInstanceState(id1);
+        (,,,,,,, bool cancelled2) = retainer.getInstanceState(id2);
 
         assertTrue(cancelled1);
         assertFalse(cancelled2);
@@ -945,17 +897,11 @@ contract RetainerAgreementFuzzTest is Test {
     function setUp() public {
         signatureClause = new SignatureClauseLogicV3();
         escrowClause = new EscrowClauseLogicV3();
-        retainer = new RetainerAgreement(
-            address(signatureClause),
-            address(escrowClause)
-        );
+        retainer = new RetainerAgreement(address(signatureClause), address(escrowClause));
         vm.deal(address(retainer), 1000 ether);
     }
 
-    function testFuzz_StreamedAmountNeverExceedsMonthlyRate(
-        uint128 monthlyRate,
-        uint32 elapsedSeconds
-    ) public {
+    function testFuzz_StreamedAmountNeverExceedsMonthlyRate(uint128 monthlyRate, uint32 elapsedSeconds) public {
         monthlyRate = uint128(bound(uint256(monthlyRate), 0.1 ether, 100 ether));
         uint256 periodDuration = 30 days;
 
@@ -966,15 +912,8 @@ contract RetainerAgreementFuzzTest is Test {
 
         vm.deal(client, monthlyRate + 10 ether);
 
-        uint256 instanceId = retainer.createInstance(
-            client,
-            contractor,
-            address(0),
-            monthlyRate,
-            periodDuration,
-            7,
-            keccak256("doc")
-        );
+        uint256 instanceId =
+            retainer.createInstance(client, contractor, address(0), monthlyRate, periodDuration, 7, keccak256("doc"));
 
         // Sign terms
         bytes32 termsHash = keccak256(abi.encode(uint256(monthlyRate), periodDuration, uint256(7)));
@@ -995,9 +934,7 @@ contract RetainerAgreementFuzzTest is Test {
         assertLe(claimable, monthlyRate);
     }
 
-    function testFuzz_ClaimedAmountTracksCorrectly(
-        uint8 numClaims
-    ) public {
+    function testFuzz_ClaimedAmountTracksCorrectly(uint8 numClaims) public {
         numClaims = uint8(bound(uint256(numClaims), 1, 10));
         uint256 monthlyRate = 10 ether;
         uint256 periodDuration = 30 days;
@@ -1009,15 +946,8 @@ contract RetainerAgreementFuzzTest is Test {
 
         vm.deal(client, monthlyRate + 10 ether);
 
-        uint256 instanceId = retainer.createInstance(
-            client,
-            contractor,
-            address(0),
-            monthlyRate,
-            periodDuration,
-            7,
-            keccak256("doc")
-        );
+        uint256 instanceId =
+            retainer.createInstance(client, contractor, address(0), monthlyRate, periodDuration, 7, keccak256("doc"));
 
         // Sign and fund
         bytes32 termsHash = keccak256(abi.encode(monthlyRate, periodDuration, uint256(7)));
@@ -1042,7 +972,7 @@ contract RetainerAgreementFuzzTest is Test {
             }
         }
 
-        (,,,, , uint256 claimedAmount,,) = retainer.getInstanceState(instanceId);
+        (,,,,, uint256 claimedAmount,,) = retainer.getInstanceState(instanceId);
         assertEq(claimedAmount, totalClaimed);
         assertLe(totalClaimed, monthlyRate);
     }
@@ -1058,15 +988,8 @@ contract RetainerAgreementFuzzTest is Test {
 
         vm.deal(client, monthlyRate + 10 ether);
 
-        uint256 instanceId = retainer.createInstance(
-            client,
-            contractor,
-            address(0),
-            monthlyRate,
-            30 days,
-            noticeDays,
-            keccak256("doc")
-        );
+        uint256 instanceId =
+            retainer.createInstance(client, contractor, address(0), monthlyRate, 30 days, noticeDays, keccak256("doc"));
 
         // Sign and fund
         bytes32 termsHash = keccak256(abi.encode(monthlyRate, uint256(30 days), uint256(noticeDays)));
@@ -1119,10 +1042,7 @@ contract RetainerAgreementInvariantTest is Test {
     function setUp() public {
         signatureClause = new SignatureClauseLogicV3();
         escrowClause = new EscrowClauseLogicV3();
-        retainer = new RetainerAgreement(
-            address(signatureClause),
-            address(escrowClause)
-        );
+        retainer = new RetainerAgreement(address(signatureClause), address(escrowClause));
         vm.deal(address(retainer), 1000 ether);
 
         handler = new RetainerHandler(retainer);
@@ -1174,13 +1094,7 @@ contract RetainerHandler is Test {
         vm.deal(client, MONTHLY_RATE * 10);
 
         uint256 instanceId = retainer.createInstance(
-            client,
-            contractor,
-            address(0),
-            MONTHLY_RATE,
-            30 days,
-            7,
-            keccak256(abi.encode("doc", seed))
+            client, contractor, address(0), MONTHLY_RATE, 30 days, 7, keccak256(abi.encode("doc", seed))
         );
 
         instanceIds.push(instanceId);
@@ -1203,7 +1117,7 @@ contract RetainerHandler is Test {
         uint256 instanceId = instanceIds[instanceIndex];
 
         // Get contractor
-        (,,, , address contractor,,,,) = retainer.getInstance(instanceId);
+        (,,,, address contractor,,,,) = retainer.getInstance(instanceId);
 
         // Check if there's anything to claim
         uint256 claimable = retainer.getClaimableAmount(instanceId);

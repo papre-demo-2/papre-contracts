@@ -21,7 +21,6 @@ import {AgreementFactoryV3} from "../src/factories/AgreementFactoryV3.sol";
 /// @notice Deploy all MVP contracts to Anvil for local testing
 /// @dev Run with: forge script script/DeployLocal.s.sol --rpc-url http://localhost:8545 --broadcast
 contract DeployLocal is Script {
-
     // Deployed addresses
     SignatureClauseLogicV3 public signatureClause;
     EscrowClauseLogicV3 public escrowClause;
@@ -40,10 +39,8 @@ contract DeployLocal is Script {
 
     function run() external {
         // Use Anvil's first default private key if not set
-        uint256 deployerPrivateKey = vm.envOr(
-            "PRIVATE_KEY",
-            uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80)
-        );
+        uint256 deployerPrivateKey =
+            vm.envOr("PRIVATE_KEY", uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80));
         address deployer = vm.addr(deployerPrivateKey);
 
         console2.log("Deploying from:", deployer);
@@ -69,10 +66,7 @@ contract DeployLocal is Script {
         milestoneClause = new MilestoneClauseLogicV3();
         console2.log("MilestoneClauseLogicV3:", address(milestoneClause));
 
-        milestoneAdapter = new MilestoneEscrowAdapter(
-            address(milestoneClause),
-            address(escrowClause)
-        );
+        milestoneAdapter = new MilestoneEscrowAdapter(address(milestoneClause), address(escrowClause));
         console2.log("MilestoneEscrowAdapter:", address(milestoneAdapter));
 
         console2.log("");
@@ -83,18 +77,12 @@ contract DeployLocal is Script {
 
         console2.log("=== Deploying Agreement Implementations ===");
 
-        freelanceServiceImpl = new FreelanceServiceAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(declarativeClause)
-        );
+        freelanceServiceImpl =
+            new FreelanceServiceAgreement(address(signatureClause), address(escrowClause), address(declarativeClause));
         console2.log("FreelanceServiceAgreement:", address(freelanceServiceImpl));
 
         milestonePaymentImpl = new MilestonePaymentAgreement(
-            address(signatureClause),
-            address(escrowClause),
-            address(milestoneClause),
-            address(milestoneAdapter)
+            address(signatureClause), address(escrowClause), address(milestoneClause), address(milestoneAdapter)
         );
         console2.log("MilestonePaymentAgreement:", address(milestonePaymentImpl));
 

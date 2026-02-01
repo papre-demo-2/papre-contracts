@@ -34,7 +34,6 @@ import {DeclarativeClauseLogicV3} from "../clauses/content/DeclarativeClauseLogi
 ///      - EscrowClauseLogicV3: Hold funds until work approved
 ///      - DeclarativeClauseLogicV3: Store scope of work reference
 contract FreelanceServiceAgreement is AgreementBaseV3 {
-
     // ═══════════════════════════════════════════════════════════════
     //                        IMMUTABLES
     // ═══════════════════════════════════════════════════════════════
@@ -51,31 +50,28 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
     /// @notice Per-instance agreement data
     struct InstanceData {
         // Instance metadata
-        uint256 instanceNumber;        // Sequential: 1, 2, 3...
-        uint256 parentInstanceId;      // 0 if original, else points to countered agreement
-        address creator;               // Who created this instance
-        uint256 createdAt;             // Block timestamp
-
+        uint256 instanceNumber; // Sequential: 1, 2, 3...
+        uint256 parentInstanceId; // 0 if original, else points to countered agreement
+        address creator; // Who created this instance
+        uint256 createdAt; // Block timestamp
         // Clause instance IDs
-        bytes32 termsSignatureId;      // Signature instance for initial terms
-        bytes32 deliveryApprovalId;    // Signature instance for delivery approval
-        bytes32 escrowId;              // Escrow instance
-        bytes32 scopeId;               // Declarative clause for scope of work
-
+        bytes32 termsSignatureId; // Signature instance for initial terms
+        bytes32 deliveryApprovalId; // Signature instance for delivery approval
+        bytes32 escrowId; // Escrow instance
+        bytes32 scopeId; // Declarative clause for scope of work
         // Agreement-specific data
         address client;
         address freelancer;
-        bytes32 scopeHash;             // IPFS CID or hash of scope document
+        bytes32 scopeHash; // IPFS CID or hash of scope document
         uint256 paymentAmount;
-        address paymentToken;          // address(0) for ETH
-        uint256 cancellationFeeBps;    // Kill fee in basis points
-        bytes32 documentCID;           // IPFS CID of the agreement document
-
+        address paymentToken; // address(0) for ETH
+        uint256 cancellationFeeBps; // Kill fee in basis points
+        bytes32 documentCID; // IPFS CID of the agreement document
         // State flags
-        bool termsAccepted;            // Both parties signed terms
-        bool workDelivered;            // Freelancer marked work as delivered
-        bool clientApproved;           // Client approved the delivery
-        bool cancelled;                // Agreement was cancelled
+        bool termsAccepted; // Both parties signed terms
+        bool workDelivered; // Freelancer marked work as delivered
+        bool clientApproved; // Client approved the delivery
+        bool cancelled; // Agreement was cancelled
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -88,15 +84,13 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
         uint256 instanceCounter;
         mapping(uint256 => InstanceData) instances;
         mapping(address => uint256[]) userInstances;
-
         // Proxy mode storage (Technical mode) - uses instanceId = 0
         // When deployed as proxy, only instance 0 is used
         bool isProxyMode;
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.agreement.freelanceservice.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant FREELANCE_STORAGE_SLOT =
-        0x2a1b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a00;
+    bytes32 private constant FREELANCE_STORAGE_SLOT = 0x2a1b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a00;
 
     function _getFreelanceStorage() internal pure returns (FreelanceStorage storage $) {
         assembly {
@@ -126,10 +120,7 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
     // ═══════════════════════════════════════════════════════════════
 
     event InstanceCreated(
-        uint256 indexed instanceId,
-        address indexed client,
-        address indexed freelancer,
-        uint256 parentInstanceId
+        uint256 indexed instanceId, address indexed client, address indexed freelancer, uint256 parentInstanceId
     );
     event AgreementConfigured(
         uint256 indexed instanceId,
@@ -194,11 +185,7 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
     /// @param _signatureClause SignatureClauseLogicV3 address
     /// @param _escrowClause EscrowClauseLogicV3 address
     /// @param _declarativeClause DeclarativeClauseLogicV3 address
-    constructor(
-        address _signatureClause,
-        address _escrowClause,
-        address _declarativeClause
-    ) {
+    constructor(address _signatureClause, address _escrowClause, address _declarativeClause) {
         signatureClause = SignatureClauseLogicV3(_signatureClause);
         escrowClause = EscrowClauseLogicV3(_escrowClause);
         declarativeClause = DeclarativeClauseLogicV3(_declarativeClause);
@@ -345,36 +332,34 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
 
         // Initialize escrow clause
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeDepositor, (inst.escrowId, inst.client))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeDepositor, (inst.escrowId, inst.client))
         );
         _delegateToClause(
             address(escrowClause),
             abi.encodeCall(EscrowClauseLogicV3.intakeBeneficiary, (inst.escrowId, inst.freelancer))
         );
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeToken, (inst.escrowId, inst.paymentToken))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeToken, (inst.escrowId, inst.paymentToken))
         );
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeAmount, (inst.escrowId, inst.paymentAmount))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeAmount, (inst.escrowId, inst.paymentAmount))
         );
 
         // Configure cancellation policy
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeCancellationEnabled, (inst.escrowId, true))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeCancellationEnabled, (inst.escrowId, true))
         );
         _delegateToClause(
             address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeCancellableBy,
-                          (inst.escrowId, EscrowClauseLogicV3.CancellableBy.EITHER))
+            abi.encodeCall(
+                EscrowClauseLogicV3.intakeCancellableBy, (inst.escrowId, EscrowClauseLogicV3.CancellableBy.EITHER)
+            )
         );
         _delegateToClause(
             address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeCancellationFeeType,
-                          (inst.escrowId, EscrowClauseLogicV3.FeeType.BPS))
+            abi.encodeCall(
+                EscrowClauseLogicV3.intakeCancellationFeeType, (inst.escrowId, EscrowClauseLogicV3.FeeType.BPS)
+            )
         );
         _delegateToClause(
             address(escrowClause),
@@ -382,10 +367,7 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
         );
 
         // Finalize escrow configuration
-        _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.intakeReady, (inst.escrowId))
-        );
+        _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.intakeReady, (inst.escrowId)));
 
         // Initialize scope declarative clause
         _delegateToClause(
@@ -416,12 +398,12 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
 
         // Check if both have signed
         bytes memory statusResult = _delegateViewToClause(
-            address(signatureClause),
-            abi.encodeCall(SignatureClauseLogicV3.queryStatus, (inst.termsSignatureId))
+            address(signatureClause), abi.encodeCall(SignatureClauseLogicV3.queryStatus, (inst.termsSignatureId))
         );
         uint16 status = abi.decode(statusResult, (uint16));
 
-        if (status == 0x0004) { // COMPLETE
+        if (status == 0x0004) {
+            // COMPLETE
             inst.termsAccepted = true;
             emit TermsAccepted(instanceId, inst.client, inst.freelancer);
         }
@@ -445,10 +427,7 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
 
         if (!inst.termsAccepted) revert TermsNotAccepted();
 
-        _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.actionDeposit, (inst.escrowId))
-        );
+        _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionDeposit, (inst.escrowId)));
 
         emit PaymentDeposited(instanceId, inst.client, inst.paymentAmount);
     }
@@ -470,8 +449,7 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
 
         // Check escrow is funded
         bytes memory fundedResult = _delegateViewToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.queryIsFunded, (inst.escrowId))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.queryIsFunded, (inst.escrowId))
         );
         if (!abi.decode(fundedResult, (bool))) revert NotFunded();
 
@@ -522,10 +500,7 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
         inst.clientApproved = true;
 
         // Release escrow to freelancer
-        _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowId))
-        );
+        _delegateToClause(address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowId)));
 
         emit DeliveryApproved(instanceId, inst.client);
         emit PaymentReleased(instanceId, inst.freelancer, inst.paymentAmount);
@@ -548,8 +523,7 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
         inst.cancelled = true;
 
         _delegateToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.actionInitiateCancel, (inst.escrowId))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionInitiateCancel, (inst.escrowId))
         );
 
         emit AgreementCancelled(instanceId, msg.sender);
@@ -570,17 +544,21 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
     }
 
     /// @notice Get instance data
-    function getInstance(uint256 instanceId) external view returns (
-        uint256 instanceNumber,
-        uint256 parentInstanceId,
-        address creator,
-        uint256 createdAt,
-        address client,
-        address freelancer,
-        bytes32 scopeHash,
-        uint256 paymentAmount,
-        address paymentToken
-    ) {
+    function getInstance(uint256 instanceId)
+        external
+        view
+        returns (
+            uint256 instanceNumber,
+            uint256 parentInstanceId,
+            address creator,
+            uint256 createdAt,
+            address client,
+            address freelancer,
+            bytes32 scopeHash,
+            uint256 paymentAmount,
+            address paymentToken
+        )
+    {
         InstanceData storage inst = _getFreelanceStorage().instances[instanceId];
         return (
             inst.instanceNumber,
@@ -596,27 +574,20 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
     }
 
     /// @notice Get instance state
-    function getInstanceState(uint256 instanceId) external view returns (
-        bool termsAccepted,
-        bool workDelivered,
-        bool clientApproved,
-        bool cancelled
-    ) {
+    function getInstanceState(uint256 instanceId)
+        external
+        view
+        returns (bool termsAccepted, bool workDelivered, bool clientApproved, bool cancelled)
+    {
         InstanceData storage inst = _getFreelanceStorage().instances[instanceId];
-        return (
-            inst.termsAccepted,
-            inst.workDelivered,
-            inst.clientApproved,
-            inst.cancelled
-        );
+        return (inst.termsAccepted, inst.workDelivered, inst.clientApproved, inst.cancelled);
     }
 
     /// @notice Check if escrow is funded for an instance
     function isFunded(uint256 instanceId) external validInstance(instanceId) returns (bool) {
         InstanceData storage inst = _getFreelanceStorage().instances[instanceId];
         bytes memory result = _delegateViewToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.queryIsFunded, (inst.escrowId))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.queryIsFunded, (inst.escrowId))
         );
         return abi.decode(result, (bool));
     }
@@ -625,8 +596,7 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
     function isReleased(uint256 instanceId) external validInstance(instanceId) returns (bool) {
         InstanceData storage inst = _getFreelanceStorage().instances[instanceId];
         bytes memory result = _delegateViewToClause(
-            address(escrowClause),
-            abi.encodeCall(EscrowClauseLogicV3.queryIsReleased, (inst.escrowId))
+            address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.queryIsReleased, (inst.escrowId))
         );
         return abi.decode(result, (bool));
     }
@@ -644,12 +614,12 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
     }
 
     /// @notice Get clause instance IDs for an agreement instance
-    function getClauseInstanceIds(uint256 instanceId) external view validInstance(instanceId) returns (
-        bytes32 termsSignatureId,
-        bytes32 deliveryApprovalId,
-        bytes32 escrowId,
-        bytes32 scopeId
-    ) {
+    function getClauseInstanceIds(uint256 instanceId)
+        external
+        view
+        validInstance(instanceId)
+        returns (bytes32 termsSignatureId, bytes32 deliveryApprovalId, bytes32 escrowId, bytes32 scopeId)
+    {
         InstanceData storage inst = _getFreelanceStorage().instances[instanceId];
         return (inst.termsSignatureId, inst.deliveryApprovalId, inst.escrowId, inst.scopeId);
     }
@@ -680,12 +650,11 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
     }
 
     /// @notice Legacy: Get state (proxy mode only, uses instance 0)
-    function getState() external view returns (
-        bool termsAccepted,
-        bool funded,
-        bool workDelivered,
-        bool clientApproved
-    ) {
+    function getState()
+        external
+        view
+        returns (bool termsAccepted, bool funded, bool workDelivered, bool clientApproved)
+    {
         InstanceData storage inst = _getFreelanceStorage().instances[0];
         return (inst.termsAccepted, false, inst.workDelivered, inst.clientApproved);
     }

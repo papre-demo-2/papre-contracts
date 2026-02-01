@@ -64,11 +64,11 @@ contract ArbitrationClauseLogicV3 is ClauseBase {
     // EXTENDED STATES (bitmask)
     // =============================================================
 
-    uint16 internal constant STANDBY = 1 << 1;         // 0x0002
-    uint16 internal constant FILED = 1 << 4;           // 0x0010
+    uint16 internal constant STANDBY = 1 << 1; // 0x0002
+    uint16 internal constant FILED = 1 << 4; // 0x0010
     uint16 internal constant AWAITING_RULING = 1 << 5; // 0x0020
-    uint16 internal constant RULED = 1 << 6;           // 0x0040
-    uint16 internal constant EXECUTED = 1 << 2;        // 0x0004 (same as COMPLETE)
+    uint16 internal constant RULED = 1 << 6; // 0x0040
+    uint16 internal constant EXECUTED = 1 << 2; // 0x0004 (same as COMPLETE)
 
     // =============================================================
     // RULING OUTCOMES
@@ -76,10 +76,11 @@ contract ArbitrationClauseLogicV3 is ClauseBase {
 
     /// @notice Possible ruling outcomes
     enum Ruling {
-        NONE,            // No ruling yet
-        CLAIMANT_WINS,   // Release to claimant (beneficiary)
+        NONE, // No ruling yet
+        CLAIMANT_WINS, // Release to claimant (beneficiary)
         RESPONDENT_WINS, // Refund to respondent (client)
-        SPLIT            // Split between parties (uses splitBasisPoints)
+        SPLIT // Split between parties (uses splitBasisPoints)
+
     }
 
     // =============================================================
@@ -108,24 +109,14 @@ contract ArbitrationClauseLogicV3 is ClauseBase {
         uint64 evidenceWindow
     );
 
-    event ClaimFiled(
-        bytes32 indexed instanceId,
-        address indexed claimant,
-        bytes32 claimHash,
-        uint64 evidenceDeadline
-    );
+    event ClaimFiled(bytes32 indexed instanceId, address indexed claimant, bytes32 claimHash, uint64 evidenceDeadline);
 
     event EvidenceSubmitted(
-        bytes32 indexed instanceId,
-        address indexed party,
-        bytes32 evidenceHash,
-        uint256 evidenceIndex
+        bytes32 indexed instanceId, address indexed party, bytes32 evidenceHash, uint256 evidenceIndex
     );
 
     event EvidenceWindowClosed(
-        bytes32 indexed instanceId,
-        uint256 claimantEvidenceCount,
-        uint256 respondentEvidenceCount
+        bytes32 indexed instanceId, uint256 claimantEvidenceCount, uint256 respondentEvidenceCount
     );
 
     event RulingIssued(
@@ -136,10 +127,7 @@ contract ArbitrationClauseLogicV3 is ClauseBase {
         uint16 splitBasisPoints
     );
 
-    event RulingExecuted(
-        bytes32 indexed instanceId,
-        Ruling ruling
-    );
+    event RulingExecuted(bytes32 indexed instanceId, Ruling ruling);
 
     // =============================================================
     // STRUCTS
@@ -189,8 +177,7 @@ contract ArbitrationClauseLogicV3 is ClauseBase {
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.clause.arbitration.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant STORAGE_SLOT =
-        0x674709657d7ade951545e2c3bfcf0e54c24915e3d073a53388af441ccee72a00;
+    bytes32 private constant STORAGE_SLOT = 0x674709657d7ade951545e2c3bfcf0e54c24915e3d073a53388af441ccee72a00;
 
     function _getStorage() internal pure returns (ArbitrationStorage storage $) {
         assembly {
@@ -296,12 +283,7 @@ contract ArbitrationClauseLogicV3 is ClauseBase {
         $.evidenceDeadline[instanceId] = uint64(block.timestamp) + $.evidenceWindow[instanceId];
         $.status[instanceId] = FILED;
 
-        emit ClaimFiled(
-            instanceId,
-            msg.sender,
-            _claimHash,
-            $.evidenceDeadline[instanceId]
-        );
+        emit ClaimFiled(instanceId, msg.sender, _claimHash, $.evidenceDeadline[instanceId]);
     }
 
     /// @notice Submit evidence for the dispute
@@ -326,11 +308,9 @@ contract ArbitrationClauseLogicV3 is ClauseBase {
 
         // Store evidence
         uint256 evidenceIndex = $.evidence[instanceId].length;
-        $.evidence[instanceId].push(Evidence({
-            submitter: msg.sender,
-            evidenceHash: evidenceHash,
-            submittedAt: uint64(block.timestamp)
-        }));
+        $.evidence[instanceId].push(
+            Evidence({submitter: msg.sender, evidenceHash: evidenceHash, submittedAt: uint64(block.timestamp)})
+        );
         $.hasSubmittedEvidence[instanceId][msg.sender] = true;
 
         emit EvidenceSubmitted(instanceId, msg.sender, evidenceHash, evidenceIndex);
@@ -377,12 +357,7 @@ contract ArbitrationClauseLogicV3 is ClauseBase {
     /// @param _rulingHash Hash of ruling justification (off-chain)
     /// @param _splitBasisPoints For SPLIT ruling, claimant's share in basis points (0-10000)
     /// @custom:papre-style primary
-    function actionRule(
-        bytes32 instanceId,
-        Ruling _ruling,
-        bytes32 _rulingHash,
-        uint16 _splitBasisPoints
-    ) external {
+    function actionRule(bytes32 instanceId, Ruling _ruling, bytes32 _rulingHash, uint16 _splitBasisPoints) external {
         ArbitrationStorage storage $ = _getStorage();
 
         uint16 status = $.status[instanceId];
@@ -543,10 +518,11 @@ contract ArbitrationClauseLogicV3 is ClauseBase {
     /// @return submitter The address that submitted the evidence
     /// @return evidenceHash The evidence content hash
     /// @return submittedAt When the evidence was submitted
-    function queryEvidence(
-        bytes32 instanceId,
-        uint256 index
-    ) external view returns (address submitter, bytes32 evidenceHash, uint64 submittedAt) {
+    function queryEvidence(bytes32 instanceId, uint256 index)
+        external
+        view
+        returns (address submitter, bytes32 evidenceHash, uint64 submittedAt)
+    {
         Evidence storage e = _getStorage().evidence[instanceId][index];
         return (e.submitter, e.evidenceHash, e.submittedAt);
     }

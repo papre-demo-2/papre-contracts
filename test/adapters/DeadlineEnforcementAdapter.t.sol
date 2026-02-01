@@ -17,12 +17,7 @@ contract MockDeadlineAgreement {
 
     error DelegatecallFailed(bytes data);
 
-    constructor(
-        address _deadlineClause,
-        address _milestoneClause,
-        address _escrowClause,
-        address _adapter
-    ) {
+    constructor(address _deadlineClause, address _milestoneClause, address _escrowClause, address _adapter) {
         deadlineClause = DeadlineClauseLogicV3(_deadlineClause);
         milestoneClause = MilestoneClauseLogicV3(_milestoneClause);
         escrowClause = EscrowClauseLogicV3(_escrowClause);
@@ -57,49 +52,33 @@ contract MockDeadlineAgreement {
     ) external {
         (bool success, bytes memory data) = address(adapter).delegatecall(
             abi.encodeCall(
-                DeadlineEnforcementAdapter.modifyDeadline,
-                (milestoneInstanceId, milestoneIndex, newDeadline, newAction)
+                DeadlineEnforcementAdapter.modifyDeadline, (milestoneInstanceId, milestoneIndex, newDeadline, newAction)
             )
         );
         if (!success) revert DelegatecallFailed(data);
     }
 
-    function adapter_enforceDeadline(
-        bytes32 milestoneInstanceId,
-        uint256 milestoneIndex
-    ) external {
+    function adapter_enforceDeadline(bytes32 milestoneInstanceId, uint256 milestoneIndex) external {
         (bool success, bytes memory data) = address(adapter).delegatecall(
-            abi.encodeCall(
-                DeadlineEnforcementAdapter.enforceDeadline,
-                (milestoneInstanceId, milestoneIndex)
-            )
+            abi.encodeCall(DeadlineEnforcementAdapter.enforceDeadline, (milestoneInstanceId, milestoneIndex))
         );
         if (!success) revert DelegatecallFailed(data);
     }
 
-    function adapter_canEnforce(
-        bytes32 milestoneInstanceId,
-        uint256 milestoneIndex
-    ) external returns (bool) {
+    function adapter_canEnforce(bytes32 milestoneInstanceId, uint256 milestoneIndex) external returns (bool) {
         (bool success, bytes memory data) = address(adapter).delegatecall(
-            abi.encodeCall(
-                DeadlineEnforcementAdapter.canEnforce,
-                (milestoneInstanceId, milestoneIndex)
-            )
+            abi.encodeCall(DeadlineEnforcementAdapter.canEnforce, (milestoneInstanceId, milestoneIndex))
         );
         if (!success) return false;
         return abi.decode(data, (bool));
     }
 
-    function adapter_getDeadline(
-        bytes32 milestoneInstanceId,
-        uint256 milestoneIndex
-    ) external returns (uint256 deadline, uint8 action, bool enforced, address controller) {
+    function adapter_getDeadline(bytes32 milestoneInstanceId, uint256 milestoneIndex)
+        external
+        returns (uint256 deadline, uint8 action, bool enforced, address controller)
+    {
         (bool success, bytes memory data) = address(adapter).delegatecall(
-            abi.encodeCall(
-                DeadlineEnforcementAdapter.getDeadline,
-                (milestoneInstanceId, milestoneIndex)
-            )
+            abi.encodeCall(DeadlineEnforcementAdapter.getDeadline, (milestoneInstanceId, milestoneIndex))
         );
         if (!success) return (0, 0, false, address(0));
         return abi.decode(data, (uint256, uint8, bool, address));
@@ -109,11 +88,7 @@ contract MockDeadlineAgreement {
     // MILESTONE CLAUSE DELEGATECALLS
     // =========================================================
 
-    function milestone_intakeMilestone(
-        bytes32 instanceId,
-        bytes32 descriptionHash,
-        uint256 amount
-    ) external {
+    function milestone_intakeMilestone(bytes32 instanceId, bytes32 descriptionHash, uint256 amount) external {
         (bool success, bytes memory data) = address(milestoneClause).delegatecall(
             abi.encodeCall(MilestoneClauseLogicV3.intakeMilestone, (instanceId, descriptionHash, amount))
         );
@@ -141,11 +116,7 @@ contract MockDeadlineAgreement {
         if (!success) revert DelegatecallFailed(data);
     }
 
-    function milestone_intakeMilestoneEscrowId(
-        bytes32 instanceId,
-        uint256 index,
-        bytes32 escrowId
-    ) external {
+    function milestone_intakeMilestoneEscrowId(bytes32 instanceId, uint256 index, bytes32 escrowId) external {
         (bool success, bytes memory data) = address(milestoneClause).delegatecall(
             abi.encodeCall(MilestoneClauseLogicV3.intakeMilestoneEscrowId, (instanceId, index, escrowId))
         );
@@ -153,16 +124,14 @@ contract MockDeadlineAgreement {
     }
 
     function milestone_intakeReady(bytes32 instanceId) external {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.intakeReady, (instanceId))
-        );
+        (bool success, bytes memory data) =
+            address(milestoneClause).delegatecall(abi.encodeCall(MilestoneClauseLogicV3.intakeReady, (instanceId)));
         if (!success) revert DelegatecallFailed(data);
     }
 
     function milestone_actionActivate(bytes32 instanceId) external {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.actionActivate, (instanceId))
-        );
+        (bool success, bytes memory data) =
+            address(milestoneClause).delegatecall(abi.encodeCall(MilestoneClauseLogicV3.actionActivate, (instanceId)));
         if (!success) revert DelegatecallFailed(data);
     }
 
@@ -174,9 +143,8 @@ contract MockDeadlineAgreement {
     }
 
     function milestone_queryStatus(bytes32 instanceId) external returns (uint16) {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.queryStatus, (instanceId))
-        );
+        (bool success, bytes memory data) =
+            address(milestoneClause).delegatecall(abi.encodeCall(MilestoneClauseLogicV3.queryStatus, (instanceId)));
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (uint16));
     }
@@ -216,45 +184,39 @@ contract MockDeadlineAgreement {
     }
 
     function escrow_intakeToken(bytes32 instanceId, address token) external {
-        (bool success, bytes memory data) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.intakeToken, (instanceId, token))
-        );
+        (bool success, bytes memory data) =
+            address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.intakeToken, (instanceId, token)));
         if (!success) revert DelegatecallFailed(data);
     }
 
     function escrow_intakeAmount(bytes32 instanceId, uint256 amount) external {
-        (bool success, bytes memory data) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.intakeAmount, (instanceId, amount))
-        );
+        (bool success, bytes memory data) =
+            address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.intakeAmount, (instanceId, amount)));
         if (!success) revert DelegatecallFailed(data);
     }
 
     function escrow_intakeReady(bytes32 instanceId) external {
-        (bool success, bytes memory data) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.intakeReady, (instanceId))
-        );
+        (bool success, bytes memory data) =
+            address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.intakeReady, (instanceId)));
         if (!success) revert DelegatecallFailed(data);
     }
 
     function escrow_actionDeposit(bytes32 instanceId) external payable {
-        (bool success, bytes memory data) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.actionDeposit, (instanceId))
-        );
+        (bool success, bytes memory data) =
+            address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.actionDeposit, (instanceId)));
         if (!success) revert DelegatecallFailed(data);
     }
 
     function escrow_queryStatus(bytes32 instanceId) external returns (uint16) {
-        (bool success, bytes memory data) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.queryStatus, (instanceId))
-        );
+        (bool success, bytes memory data) =
+            address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.queryStatus, (instanceId)));
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (uint16));
     }
 
     function escrow_queryBeneficiary(bytes32 instanceId) external returns (address) {
-        (bool success, bytes memory data) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.queryBeneficiary, (instanceId))
-        );
+        (bool success, bytes memory data) =
+            address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.queryBeneficiary, (instanceId)));
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (address));
     }
@@ -306,18 +268,12 @@ contract DeadlineEnforcementAdapterTest is Test {
         escrowClause = new EscrowClauseLogicV3();
 
         // Deploy adapter
-        adapter = new DeadlineEnforcementAdapter(
-            address(deadlineClause),
-            address(milestoneClause),
-            address(escrowClause)
-        );
+        adapter =
+            new DeadlineEnforcementAdapter(address(deadlineClause), address(milestoneClause), address(escrowClause));
 
         // Deploy mock agreement
         agreement = new MockDeadlineAgreement(
-            address(deadlineClause),
-            address(milestoneClause),
-            address(escrowClause),
-            address(adapter)
+            address(deadlineClause), address(milestoneClause), address(escrowClause), address(adapter)
         );
 
         // Fund the client
