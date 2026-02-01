@@ -1,0 +1,13 @@
+# Run all checks before push
+echo "Running pre-push checks..."
+
+echo "Checking formatting..."
+forge fmt --check || { echo "Format check failed. Run 'forge fmt' to fix."; exit 1; }
+
+echo "Building contracts..."
+forge build || { echo "Build failed"; exit 1; }
+
+echo "Running tests..."
+forge test || { echo "Tests failed"; exit 1; }
+
+echo "All checks passed!"

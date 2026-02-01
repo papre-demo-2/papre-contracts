@@ -93,7 +93,7 @@ contract StreamingClauseLogicV3Test is Test {
 
     function test_IntakeRatePerSecond_Success() public {
         bytes32 instanceId = keccak256("test-1");
-        uint256 ratePerSecond = 1 ether / 30 days; // ~1 ETH per 30 days
+        uint256 ratePerSecond = uint256(1 ether) / uint256(30 days); // ~1 ETH per 30 days
 
         streaming.intakeRatePerSecond(instanceId, ratePerSecond);
 
@@ -830,7 +830,10 @@ contract StreamingClauseLogicV3Test is Test {
 
     function testFuzz_CancelConservesTotal(uint256 deposit, uint256 elapsed) public {
         deposit = bound(deposit, 1 ether, 100 ether);
-        elapsed = bound(elapsed, 0, deposit - 1); // Must cancel before stream finishes
+        // Rate is 1 ether per second, so stream duration = deposit / 1 ether seconds
+        // Must cancel before stream finishes
+        uint256 streamDuration = deposit / 1 ether;
+        elapsed = bound(elapsed, 0, streamDuration > 0 ? streamDuration - 1 : 0);
 
         bytes32 instanceId = keccak256(abi.encode("fuzz-cancel", deposit, elapsed));
 

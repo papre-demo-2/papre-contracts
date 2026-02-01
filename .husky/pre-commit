@@ -1,0 +1,2 @@
+# Format check - auto-formats if needed
+forge fmt
