@@ -644,3 +644,36 @@ Why? Agreements are meant to be reused. Different use cases call for different c
 - `EscrowedSigningAgreement` — Signing with payment on completion
 
 The goal: **50 audited Clauses powering 100 production Agreements**. Each materially different Agreement adds to the library. Don't collapse variations—celebrate them.
+
+---
+
+## Multi-Agent Workflow
+
+This repo uses a coordinated multi-tool AI development workflow with Linear as the source of truth.
+
+### Branch Naming
+
+```
+{tool}-{LINEAR-ID}-{description}
+```
+
+Examples:
+- `claude-PAP-80-escrow-clause-fix`
+- `codex-PAP-81-test-coverage`
+
+### Before Ending Session
+
+1. Update `AI_HANDOFF.md` with current state
+2. Push all changes
+3. Update Linear issue status
+4. Add `needs:review` label if complex task
+
+### Linear Labels
+
+- Add `agent:claude-code` or `agent:codex` when starting work
+- Add `needs:review` when ready for reviewer agent
+- Add `complexity:simple` or `complexity:complex` during triage
+
+### Handoff File
+
+See `AI_HANDOFF.md` in repo root for session context tracking between agents.
