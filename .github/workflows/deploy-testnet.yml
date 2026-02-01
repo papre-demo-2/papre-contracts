@@ -1,0 +1,96 @@
+name: Deploy to Testnet
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: 'Target network'
+        required: true
+        type: choice
+        options:
+          - sepolia
+          - base_sepolia
+          - arbitrum_sepolia
+      dry_run:
+        description: 'Dry run (simulate only)'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.network }}
+    runs-on: ubuntu-latest
+    environment: testnet
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Run tests first
+        run: forge test -vvv
+
+      - name: Set RPC URL
+        id: rpc
+        run: |
+          case "${{ inputs.network }}" in
+            sepolia)
+              echo "url=${{ secrets.SEPOLIA_RPC_URL }}" >> $GITHUB_OUTPUT
+              echo "etherscan_key=${{ secrets.ETHERSCAN_API_KEY }}" >> $GITHUB_OUTPUT
+              ;;
+            base_sepolia)
+              echo "url=${{ secrets.BASE_SEPOLIA_RPC_URL }}" >> $GITHUB_OUTPUT
+              echo "etherscan_key=${{ secrets.BASESCAN_API_KEY }}" >> $GITHUB_OUTPUT
+              ;;
+            arbitrum_sepolia)
+              echo "url=${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}" >> $GITHUB_OUTPUT
+              echo "etherscan_key=${{ secrets.ARBISCAN_API_KEY }}" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Deploy (Dry Run)
+        if: inputs.dry_run
+        run: |
+          echo "Simulating deployment to ${{ inputs.network }}..."
+          forge script script/Deploy.s.sol:DeployScript \
+            --rpc-url ${{ steps.rpc.outputs.url }} \
+            --private-key ${{ secrets.DEPLOYER_PRIVATE_KEY }} \
+            -vvvv
+
+      - name: Deploy (Live)
+        if: ${{ !inputs.dry_run }}
+        run: |
+          echo "Deploying to ${{ inputs.network }}..."
+          forge script script/Deploy.s.sol:DeployScript \
+            --rpc-url ${{ steps.rpc.outputs.url }} \
+            --private-key ${{ secrets.DEPLOYER_PRIVATE_KEY }} \
+            --broadcast \
+            --verify \
+            --etherscan-api-key ${{ steps.rpc.outputs.etherscan_key }} \
+            -vvvv
+
+      - name: Upload deployment artifacts
+        if: ${{ !inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-${{ inputs.network }}-${{ github.sha }}
+          path: broadcast/
+          retention-days: 90
+
+      - name: Post deployment summary
+        if: ${{ !inputs.dry_run }}
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Network:** ${{ inputs.network }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployer:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY

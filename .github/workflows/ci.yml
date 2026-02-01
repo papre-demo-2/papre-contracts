@@ -1,0 +1,375 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - develop
+  pull_request:
+    branches:
+      - main
+      - staging
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  build:
+    name: Build Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Show Forge version
+        run: forge --version
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Build contracts
+        run: forge build --sizes
+        id: build
+
+      - name: Check contract sizes
+        run: |
+          echo "## Contract Sizes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          forge build --sizes 2>&1 | tail -50 >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  fmt:
+    name: Solidity Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Check formatting
+        run: forge fmt --check
+
+  test:
+    name: Forge Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Run tests
+        run: |
+          forge test -vvv --gas-report 2>&1 | tee test-output.txt
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+
+      - name: Post test summary
+        if: always()
+        run: |
+          echo "## Forge Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat test-output.txt | tail -100 >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  fuzz:
+    name: Fuzz Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Run fuzz tests
+        run: |
+          FOUNDRY_FUZZ_RUNS=1000 forge test --match-test "testFuzz" -vvv 2>&1 | tee fuzz-output.txt
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+
+      - name: Post fuzz summary
+        if: always()
+        run: |
+          echo "## Fuzz Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat fuzz-output.txt | tail -50 >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  gas:
+    name: Gas Snapshot
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Generate gas snapshot
+        run: forge snapshot --snap .gas-snapshot-new
+
+      - name: Compare gas snapshot
+        run: |
+          if [ -f .gas-snapshot ]; then
+            echo "## Gas Comparison" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            forge snapshot --diff .gas-snapshot 2>&1 | head -100 >> $GITHUB_STEP_SUMMARY || true
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No existing gas snapshot to compare against" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload gas snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: gas-snapshot
+          path: .gas-snapshot-new
+          retention-days: 30
+
+  coverage:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Generate coverage report
+        run: |
+          forge coverage --report summary --report lcov 2>&1 | tee coverage-output.txt
+        continue-on-error: true
+
+      - name: Post coverage summary
+        if: always()
+        run: |
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat coverage-output.txt | tail -50 >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: |
+            lcov.info
+            coverage-output.txt
+          retention-days: 7
+
+  slither:
+    name: Slither Analysis
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Build for Slither
+        run: forge build --build-info --skip */test/** --skip */script/**
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.4.0
+        id: slither
+        continue-on-error: true
+        with:
+          target: '.'
+          slither-args: |
+            --filter-paths "lib|test|script"
+            --exclude-informational
+            --exclude-low
+            --sarif results.sarif
+          fail-on: none
+          sarif: results.sarif
+
+      - name: Upload Slither SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+
+      - name: Post Slither summary
+        if: always()
+        run: |
+          echo "## Slither Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Slither analysis complete. Results uploaded to Security tab." >> $GITHUB_STEP_SUMMARY
+
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [build, fmt, test, fuzz, gas, coverage, slither]
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.build.result }}" == "failure" ]] || \
+             [[ "${{ needs.fmt.result }}" == "failure" ]] || \
+             [[ "${{ needs.test.result }}" == "failure" ]]; then
+            echo "One or more required jobs failed"
+            exit 1
+          fi
+          echo "All required jobs passed!"
+
+      - name: Post summary
+        run: |
+          echo "## papre-contracts CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Formatting | ${{ needs.fmt.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Fuzz Tests | ${{ needs.fuzz.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Gas Snapshot | ${{ needs.gas.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Coverage | ${{ needs.coverage.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Slither | ${{ needs.slither.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const results = {
+              build: '${{ needs.build.result }}',
+              fmt: '${{ needs.fmt.result }}',
+              test: '${{ needs.test.result }}',
+              fuzz: '${{ needs.fuzz.result }}',
+              gas: '${{ needs.gas.result }}',
+              coverage: '${{ needs.coverage.result }}',
+              slither: '${{ needs.slither.result }}'
+            };
+
+            const icon = (status) => status === 'success' ? '✅' : status === 'failure' ? '❌' : '⚠️';
+            const allPassed = ['build', 'fmt', 'test'].every(k => results[k] === 'success');
+
+            const body = `## CI Results ${allPassed ? '✅' : '❌'}
+
+            | Job | Status |
+            |-----|--------|
+            | Build | ${icon(results.build)} |
+            | Formatting | ${icon(results.fmt)} |
+            | Tests | ${icon(results.test)} |
+            | Fuzz Tests | ${icon(results.fuzz)} |
+            | Gas Snapshot | ${icon(results.gas)} |
+            | Coverage | ${icon(results.coverage)} |
+            | Slither | ${icon(results.slither)} |
+
+            ${allPassed ? '**All required checks passed!** Ready to merge.' : '**Some checks failed.** Please fix before merging.'}`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  auto-label:
+    name: Auto Label PR
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Label PR based on files changed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const labels = new Set();
+
+            for (const file of files) {
+              if (file.filename.startsWith('src/clauses/')) labels.add('clauses');
+              if (file.filename.startsWith('src/agreements/')) labels.add('agreements');
+              if (file.filename.startsWith('src/adapters/')) labels.add('adapters');
+              if (file.filename.startsWith('src/interfaces/')) labels.add('interfaces');
+              if (file.filename.startsWith('test/')) labels.add('tests');
+              if (file.filename.startsWith('script/')) labels.add('deployment');
+              if (file.filename.startsWith('.github/')) labels.add('ci');
+              if (file.filename === 'foundry.toml') labels.add('config');
+            }
+
+            if (labels.size > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: Array.from(labels)
+              });
+            }
