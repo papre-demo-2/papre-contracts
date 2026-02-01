@@ -17,6 +17,10 @@ on:
         type: boolean
         default: true
 
+concurrency:
+  group: deploy-testnet-${{ inputs.network }}
+  cancel-in-progress: false
+
 jobs:
   deploy:
     name: Deploy to ${{ inputs.network }}
@@ -31,7 +35,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: nightly
+          version: stable
 
       - name: Install dependencies
         run: forge install
