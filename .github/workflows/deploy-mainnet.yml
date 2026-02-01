@@ -115,7 +115,7 @@ jobs:
           retention-days: 365
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: deploy-${{ inputs.network }}-${{ github.sha }}
           name: Mainnet Deployment - ${{ inputs.network }}
