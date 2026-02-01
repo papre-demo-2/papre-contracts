@@ -30,11 +30,20 @@ jobs:
         with:
           version: nightly
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
       - name: Show Forge version
         run: forge --version
 
-      - name: Install dependencies
+      - name: Install Foundry dependencies
         run: forge install
+
+      - name: Install npm dependencies
+        run: npm ci
 
       - name: Build contracts
         run: forge build --sizes
@@ -62,6 +71,15 @@ jobs:
         with:
           version: nightly
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
       - name: Check formatting
         run: forge fmt --check
 
@@ -80,8 +98,17 @@ jobs:
         with:
           version: nightly
 
-      - name: Install dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Foundry dependencies
         run: forge install
+
+      - name: Install npm dependencies
+        run: npm ci
 
       - name: Run tests
         run: |
@@ -114,8 +141,17 @@ jobs:
         with:
           version: nightly
 
-      - name: Install dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Foundry dependencies
         run: forge install
+
+      - name: Install npm dependencies
+        run: npm ci
 
       - name: Run fuzz tests
         run: |
@@ -147,8 +183,17 @@ jobs:
         with:
           version: nightly
 
-      - name: Install dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Foundry dependencies
         run: forge install
+
+      - name: Install npm dependencies
+        run: npm ci
 
       - name: Generate gas snapshot
         run: forge snapshot --snap .gas-snapshot-new
@@ -187,8 +232,17 @@ jobs:
         with:
           version: nightly
 
-      - name: Install dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Foundry dependencies
         run: forge install
+
+      - name: Install npm dependencies
+        run: npm ci
 
       - name: Generate coverage report
         run: |
@@ -229,8 +283,17 @@ jobs:
         with:
           version: nightly
 
-      - name: Install dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Foundry dependencies
         run: forge install
+
+      - name: Install npm dependencies
+        run: npm ci
 
       - name: Build for Slither
         run: forge build --build-info --skip */test/** --skip */script/**
