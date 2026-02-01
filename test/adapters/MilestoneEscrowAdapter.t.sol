@@ -31,37 +31,32 @@ contract MockAgreement {
     // =========================================================
 
     function milestone_intakeMilestone(bytes32 instanceId, bytes32 descriptionHash, uint256 amount) external {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.intakeMilestone, (instanceId, descriptionHash, amount))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.intakeMilestone, (instanceId, descriptionHash, amount)));
         if (!success) revert DelegatecallFailed(data);
     }
 
     function milestone_intakeBeneficiary(bytes32 instanceId, address beneficiary) external {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.intakeBeneficiary, (instanceId, beneficiary))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.intakeBeneficiary, (instanceId, beneficiary)));
         if (!success) revert DelegatecallFailed(data);
     }
 
     function milestone_intakeClient(bytes32 instanceId, address client) external {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.intakeClient, (instanceId, client))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.intakeClient, (instanceId, client)));
         if (!success) revert DelegatecallFailed(data);
     }
 
     function milestone_intakeToken(bytes32 instanceId, address token) external {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.intakeToken, (instanceId, token))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.intakeToken, (instanceId, token)));
         if (!success) revert DelegatecallFailed(data);
     }
 
     function milestone_intakeMilestoneEscrowId(bytes32 instanceId, uint256 index, bytes32 escrowId) external {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.intakeMilestoneEscrowId, (instanceId, index, escrowId))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.intakeMilestoneEscrowId, (instanceId, index, escrowId)));
         if (!success) revert DelegatecallFailed(data);
     }
 
@@ -78,9 +73,8 @@ contract MockAgreement {
     }
 
     function milestone_actionRequestConfirmation(bytes32 instanceId, uint256 index) external {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.actionRequestConfirmation, (instanceId, index))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.actionRequestConfirmation, (instanceId, index)));
         if (!success) revert DelegatecallFailed(data);
     }
 
@@ -92,33 +86,29 @@ contract MockAgreement {
     }
 
     function milestone_queryMilestoneStatus(bytes32 instanceId, uint256 index) external returns (uint8) {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneStatus, (instanceId, index))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneStatus, (instanceId, index)));
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (uint8));
     }
 
     function milestone_queryMilestoneCount(bytes32 instanceId) external returns (uint256) {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneCount, (instanceId))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneCount, (instanceId)));
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (uint256));
     }
 
     function milestone_queryTotalReleased(bytes32 instanceId) external returns (uint256) {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.queryTotalReleased, (instanceId))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.queryTotalReleased, (instanceId)));
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (uint256));
     }
 
     function milestone_queryReleasedCount(bytes32 instanceId) external returns (uint256) {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.queryReleasedCount, (instanceId))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.queryReleasedCount, (instanceId)));
         if (!success) revert DelegatecallFailed(data);
         return abi.decode(data, (uint256));
     }
@@ -142,16 +132,14 @@ contract MockAgreement {
     // =========================================================
 
     function escrow_intakeDepositor(bytes32 instanceId, address depositor) external {
-        (bool success, bytes memory data) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.intakeDepositor, (instanceId, depositor))
-        );
+        (bool success, bytes memory data) = address(escrowClause)
+            .delegatecall(abi.encodeCall(EscrowClauseLogicV3.intakeDepositor, (instanceId, depositor)));
         if (!success) revert DelegatecallFailed(data);
     }
 
     function escrow_intakeBeneficiary(bytes32 instanceId, address beneficiary) external {
-        (bool success, bytes memory data) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.intakeBeneficiary, (instanceId, beneficiary))
-        );
+        (bool success, bytes memory data) = address(escrowClause)
+            .delegatecall(abi.encodeCall(EscrowClauseLogicV3.intakeBeneficiary, (instanceId, beneficiary)));
         if (!success) revert DelegatecallFailed(data);
     }
 
@@ -212,16 +200,18 @@ contract MockAgreement {
     // =========================================================
 
     function adapter_confirmAndRelease(bytes32 milestoneInstanceId, uint256 milestoneIndex) external {
-        (bool success, bytes memory data) = address(adapter).delegatecall(
-            abi.encodeCall(MilestoneEscrowAdapter.confirmAndRelease, (milestoneInstanceId, milestoneIndex))
-        );
+        (bool success, bytes memory data) = address(adapter)
+            .delegatecall(
+                abi.encodeCall(MilestoneEscrowAdapter.confirmAndRelease, (milestoneInstanceId, milestoneIndex))
+            );
         if (!success) revert DelegatecallFailed(data);
     }
 
     function adapter_dispute(bytes32 milestoneInstanceId, uint256 milestoneIndex, bytes32 reasonHash) external {
-        (bool success, bytes memory data) = address(adapter).delegatecall(
-            abi.encodeCall(MilestoneEscrowAdapter.dispute, (milestoneInstanceId, milestoneIndex, reasonHash))
-        );
+        (bool success, bytes memory data) = address(adapter)
+            .delegatecall(
+                abi.encodeCall(MilestoneEscrowAdapter.dispute, (milestoneInstanceId, milestoneIndex, reasonHash))
+            );
         if (!success) revert DelegatecallFailed(data);
     }
 
@@ -230,19 +220,19 @@ contract MockAgreement {
         uint256 milestoneIndex,
         bool releaseToBeneficiary
     ) external {
-        (bool success, bytes memory data) = address(adapter).delegatecall(
-            abi.encodeCall(
-                MilestoneEscrowAdapter.resolveDisputeAndExecute,
-                (milestoneInstanceId, milestoneIndex, releaseToBeneficiary)
-            )
-        );
+        (bool success, bytes memory data) = address(adapter)
+            .delegatecall(
+                abi.encodeCall(
+                    MilestoneEscrowAdapter.resolveDisputeAndExecute,
+                    (milestoneInstanceId, milestoneIndex, releaseToBeneficiary)
+                )
+            );
         if (!success) revert DelegatecallFailed(data);
     }
 
     function adapter_cancelAndRefundAll(bytes32 milestoneInstanceId) external {
-        (bool success, bytes memory data) = address(adapter).delegatecall(
-            abi.encodeCall(MilestoneEscrowAdapter.cancelAndRefundAll, (milestoneInstanceId))
-        );
+        (bool success, bytes memory data) = address(adapter)
+            .delegatecall(abi.encodeCall(MilestoneEscrowAdapter.cancelAndRefundAll, (milestoneInstanceId)));
         if (!success) revert DelegatecallFailed(data);
     }
 
@@ -1041,8 +1031,9 @@ contract AdapterInvariantHandler is Test {
         if (status == 1 || status == 2) {
             vm.prank(client);
             try agreement.adapter_confirmAndRelease(milestoneInstanceId, index) {
-                // Success
-            } catch {
+            // Success
+            }
+                catch {
                 // Ignore failures
             }
         }
@@ -1058,8 +1049,9 @@ contract AdapterInvariantHandler is Test {
         if (status == 1 || status == 2) {
             vm.prank(client);
             try agreement.adapter_dispute(milestoneInstanceId, index, keccak256(abi.encode("d", index))) {
-                // Success
-            } catch {
+            // Success
+            }
+                catch {
                 // Ignore failures
             }
         }
@@ -1074,8 +1066,9 @@ contract AdapterInvariantHandler is Test {
         // Can only resolve disputed milestones
         if (status == 4) {
             try agreement.adapter_resolveDisputeAndExecute(milestoneInstanceId, index, outcome) {
-                // Success
-            } catch {
+            // Success
+            }
+                catch {
                 // Ignore failures
             }
         }

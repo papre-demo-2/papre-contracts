@@ -125,7 +125,8 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.agreement.milestonepayment.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant MILESTONE_STORAGE_SLOT = 0x3b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b00;
+    bytes32 private constant MILESTONE_STORAGE_SLOT =
+        0x3b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b00;
 
     function _getMilestoneStorage() internal pure returns (MilestonePaymentStorage storage $) {
         assembly {

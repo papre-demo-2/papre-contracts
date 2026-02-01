@@ -84,9 +84,10 @@ contract FreelanceServiceAgreementTest is Test {
     // ═══════════════════════════════════════════════════════════════
 
     function _createProxyAgreement() internal returns (FreelanceServiceAgreement) {
-        return _createProxyAgreement(
-            client, freelancer, SCOPE_HASH, PAYMENT_AMOUNT, address(0), KILL_FEE_BPS, DOCUMENT_CID
-        );
+        return
+            _createProxyAgreement(
+                client, freelancer, SCOPE_HASH, PAYMENT_AMOUNT, address(0), KILL_FEE_BPS, DOCUMENT_CID
+            );
     }
 
     function _createProxyAgreement(

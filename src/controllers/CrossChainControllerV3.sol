@@ -286,8 +286,9 @@ contract CrossChainControllerV3 is CCIPReceiver, Ownable {
         uint8 action,
         bytes calldata extraData
     ) external view returns (uint256 fee) {
-        return
-            getFeeWithToken(destinationChainSelector, destinationAgreement, contentHash, action, extraData, address(0));
+        return getFeeWithToken(
+            destinationChainSelector, destinationAgreement, contentHash, action, extraData, address(0)
+        );
     }
 
     /// @notice Get the fee required to send a cross-chain message with specific fee token
@@ -356,9 +357,10 @@ contract CrossChainControllerV3 is CCIPReceiver, Ownable {
         );
 
         // Forward to destination agreement
-        ICrossChainReceiver(payload.destinationAgreement).receiveCrossChainMessage(
-            sourceChainSelector, payload.sourceAgreement, payload.contentHash, payload.action, payload.extraData
-        );
+        ICrossChainReceiver(payload.destinationAgreement)
+            .receiveCrossChainMessage(
+                sourceChainSelector, payload.sourceAgreement, payload.contentHash, payload.action, payload.extraData
+            );
     }
 
     // =============================================================

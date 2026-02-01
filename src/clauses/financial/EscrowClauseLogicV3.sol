@@ -77,7 +77,6 @@ contract EscrowClauseLogicV3 is ClauseBase {
         FIXED, // 1 - Fixed amount to beneficiary, rest to depositor
         BPS, // 2 - Percentage to beneficiary (basis points, 10000 = 100%)
         PRORATED // 3 - Based on time elapsed since proration start date
-
     }
 
     /// @notice Who is authorized to initiate cancellation
@@ -86,7 +85,6 @@ contract EscrowClauseLogicV3 is ClauseBase {
         DEPOSITOR, // 1 - Only depositor can cancel
         BENEFICIARY, // 2 - Only beneficiary can cancel
         EITHER // 3 - Either party can cancel
-
     }
 
     // =============================================================

@@ -102,10 +102,7 @@ interface ICrossChainTransport {
     /// @param instanceId Unique identifier for this transport instance
     /// @return sourceChainSelector The source chain
     /// @return sourceAddress The source contract address
-    function handoffSource(bytes32 instanceId)
-        external
-        view
-        returns (uint64 sourceChainSelector, address sourceAddress);
+    function handoffSource(bytes32 instanceId) external view returns (uint64 sourceChainSelector, address sourceAddress);
 
     // =============================================================
     // QUERY FUNCTIONS

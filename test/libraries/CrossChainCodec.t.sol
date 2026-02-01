@@ -588,8 +588,7 @@ contract CodecHandler is Test {
 
         encodedMessages.push(
             CrossChainCodecInvariantTest.EncodedMessage({
-                payload: payload,
-                expectedSchemaId: CrossChainCodec.SIGNATURES_COMPLETE_V1
+                payload: payload, expectedSchemaId: CrossChainCodec.SIGNATURES_COMPLETE_V1
             })
         );
     }
@@ -599,8 +598,7 @@ contract CodecHandler is Test {
 
         encodedMessages.push(
             CrossChainCodecInvariantTest.EncodedMessage({
-                payload: payload,
-                expectedSchemaId: CrossChainCodec.CONTENT_SEALED_V1
+                payload: payload, expectedSchemaId: CrossChainCodec.CONTENT_SEALED_V1
             })
         );
     }
@@ -610,8 +608,7 @@ contract CodecHandler is Test {
 
         encodedMessages.push(
             CrossChainCodecInvariantTest.EncodedMessage({
-                payload: payload,
-                expectedSchemaId: CrossChainCodec.ESCROW_FUNDED_V1
+                payload: payload, expectedSchemaId: CrossChainCodec.ESCROW_FUNDED_V1
             })
         );
     }
@@ -621,8 +618,7 @@ contract CodecHandler is Test {
 
         encodedMessages.push(
             CrossChainCodecInvariantTest.EncodedMessage({
-                payload: payload,
-                expectedSchemaId: CrossChainCodec.CONDITION_MET_V1
+                payload: payload, expectedSchemaId: CrossChainCodec.CONDITION_MET_V1
             })
         );
     }

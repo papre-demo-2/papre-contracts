@@ -134,12 +134,13 @@ contract DeadlineEnforcementAdapter {
         uint8 action,
         address controller
     ) external {
-        (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(
-                DeadlineClauseLogicV3.intakeSetDeadline,
-                (milestoneInstanceId, milestoneIndex, deadline, action, controller)
-            )
-        );
+        (bool success, bytes memory data) = address(deadlineClause)
+            .delegatecall(
+                abi.encodeCall(
+                    DeadlineClauseLogicV3.intakeSetDeadline,
+                    (milestoneInstanceId, milestoneIndex, deadline, action, controller)
+                )
+            );
         if (!success) revert SetDeadlineFailed(data);
 
         emit DeadlineSetViaAdapter(milestoneInstanceId, milestoneIndex, deadline, action);
@@ -156,12 +157,13 @@ contract DeadlineEnforcementAdapter {
     function modifyDeadline(bytes32 milestoneInstanceId, uint256 milestoneIndex, uint256 newDeadline, uint8 newAction)
         external
     {
-        (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(
-                DeadlineClauseLogicV3.intakeModifyDeadline,
-                (milestoneInstanceId, milestoneIndex, newDeadline, newAction)
-            )
-        );
+        (bool success, bytes memory data) = address(deadlineClause)
+            .delegatecall(
+                abi.encodeCall(
+                    DeadlineClauseLogicV3.intakeModifyDeadline,
+                    (milestoneInstanceId, milestoneIndex, newDeadline, newAction)
+                )
+            );
         if (!success) revert SetDeadlineFailed(data);
 
         emit DeadlineSetViaAdapter(milestoneInstanceId, milestoneIndex, newDeadline, newAction);
@@ -188,24 +190,23 @@ contract DeadlineEnforcementAdapter {
     ///      4. Mark deadline as enforced
     function enforceDeadline(bytes32 milestoneInstanceId, uint256 milestoneIndex) external {
         // Step 1: Check if deadline can be enforced
-        (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(DeadlineClauseLogicV3.queryCanEnforce, (milestoneInstanceId, milestoneIndex))
-        );
+        (bool success, bytes memory data) = address(deadlineClause)
+            .delegatecall(abi.encodeCall(DeadlineClauseLogicV3.queryCanEnforce, (milestoneInstanceId, milestoneIndex)));
         if (!success) revert QueryCanEnforceFailed(data);
         bool isEnforceable = abi.decode(data, (bool));
         if (!isEnforceable) revert DeadlineNotEnforceable();
 
         // Step 2: Get the action type
-        (success, data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(DeadlineClauseLogicV3.queryAction, (milestoneInstanceId, milestoneIndex))
-        );
+        (success, data) = address(deadlineClause)
+            .delegatecall(abi.encodeCall(DeadlineClauseLogicV3.queryAction, (milestoneInstanceId, milestoneIndex)));
         if (!success) revert QueryActionFailed(data);
         uint8 action = abi.decode(data, (uint8));
 
         // Step 3: Get the linked escrow instance ID
-        (success, data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneEscrowId, (milestoneInstanceId, milestoneIndex))
-        );
+        (success, data) = address(milestoneClause)
+            .delegatecall(
+                abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneEscrowId, (milestoneInstanceId, milestoneIndex))
+            );
         if (!success) revert QueryEscrowIdFailed(data);
         bytes32 escrowInstanceId = abi.decode(data, (bytes32));
 
@@ -221,9 +222,10 @@ contract DeadlineEnforcementAdapter {
         }
 
         // Step 5: Mark deadline as enforced
-        (success, data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(DeadlineClauseLogicV3.actionMarkEnforced, (milestoneInstanceId, milestoneIndex))
-        );
+        (success, data) = address(deadlineClause)
+            .delegatecall(
+                abi.encodeCall(DeadlineClauseLogicV3.actionMarkEnforced, (milestoneInstanceId, milestoneIndex))
+            );
         if (!success) revert MarkEnforcedFailed(data);
 
         emit DeadlineEnforcedViaAdapter(milestoneInstanceId, milestoneIndex, action, msg.sender);
@@ -236,9 +238,8 @@ contract DeadlineEnforcementAdapter {
     /// @dev This is a convenience function that can be called to check before enforcing.
     ///      Uses delegatecall to read from Agreement's storage using clause's code.
     function canEnforce(bytes32 milestoneInstanceId, uint256 milestoneIndex) external returns (bool) {
-        (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(DeadlineClauseLogicV3.queryCanEnforce, (milestoneInstanceId, milestoneIndex))
-        );
+        (bool success, bytes memory data) = address(deadlineClause)
+            .delegatecall(abi.encodeCall(DeadlineClauseLogicV3.queryCanEnforce, (milestoneInstanceId, milestoneIndex)));
         if (!success) return false;
         return abi.decode(data, (bool));
     }
@@ -254,9 +255,8 @@ contract DeadlineEnforcementAdapter {
         external
         returns (uint256 deadline, uint8 action, bool enforced, address controller)
     {
-        (bool success, bytes memory data) = address(deadlineClause).delegatecall(
-            abi.encodeCall(DeadlineClauseLogicV3.queryDeadline, (milestoneInstanceId, milestoneIndex))
-        );
+        (bool success, bytes memory data) = address(deadlineClause)
+            .delegatecall(abi.encodeCall(DeadlineClauseLogicV3.queryDeadline, (milestoneInstanceId, milestoneIndex)));
         if (!success) return (0, 0, false, address(0));
         return abi.decode(data, (uint256, uint8, bool, address));
     }
@@ -268,9 +268,10 @@ contract DeadlineEnforcementAdapter {
     /// @notice Execute RELEASE action: confirm milestone, release escrow, mark released
     function _executeRelease(bytes32 milestoneInstanceId, uint256 milestoneIndex, bytes32 escrowInstanceId) internal {
         // Step 1: Confirm milestone via deadline (permissionless)
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.actionDeadlineConfirm, (milestoneInstanceId, milestoneIndex))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(
+                abi.encodeCall(MilestoneClauseLogicV3.actionDeadlineConfirm, (milestoneInstanceId, milestoneIndex))
+            );
         if (!success) revert DeadlineConfirmFailed(data);
 
         // Step 2: Release escrow
@@ -279,9 +280,10 @@ contract DeadlineEnforcementAdapter {
         if (!success) revert ReleaseFailed(data);
 
         // Step 3: Mark milestone as released
-        (success, data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.actionMarkReleased, (milestoneInstanceId, milestoneIndex))
-        );
+        (success, data) = address(milestoneClause)
+            .delegatecall(
+                abi.encodeCall(MilestoneClauseLogicV3.actionMarkReleased, (milestoneInstanceId, milestoneIndex))
+            );
         if (!success) revert MarkReleasedFailed(data);
     }
 
@@ -293,9 +295,10 @@ contract DeadlineEnforcementAdapter {
         if (!success) revert RefundFailed(data);
 
         // Step 2: Mark milestone as refunded
-        (success, data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.actionMarkRefunded, (milestoneInstanceId, milestoneIndex))
-        );
+        (success, data) = address(milestoneClause)
+            .delegatecall(
+                abi.encodeCall(MilestoneClauseLogicV3.actionMarkRefunded, (milestoneInstanceId, milestoneIndex))
+            );
         if (!success) revert MarkRefundedFailed(data);
     }
 }

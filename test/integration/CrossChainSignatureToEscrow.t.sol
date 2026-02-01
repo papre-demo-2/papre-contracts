@@ -318,21 +318,18 @@ contract MockAgreementA {
     }
 
     function setupSignature(bytes32 instanceId, address[] calldata signers, bytes32 documentHash) external {
-        (bool success,) = address(signatureClause).delegatecall(
-            abi.encodeCall(SignatureClauseLogicV3.intakeSigners, (instanceId, signers))
-        );
+        (bool success,) = address(signatureClause)
+            .delegatecall(abi.encodeCall(SignatureClauseLogicV3.intakeSigners, (instanceId, signers)));
         require(success, "intakeSigners failed");
 
-        (success,) = address(signatureClause).delegatecall(
-            abi.encodeCall(SignatureClauseLogicV3.intakeDocumentHash, (instanceId, documentHash))
-        );
+        (success,) = address(signatureClause)
+            .delegatecall(abi.encodeCall(SignatureClauseLogicV3.intakeDocumentHash, (instanceId, documentHash)));
         require(success, "intakeDocumentHash failed");
     }
 
     function sign(bytes32 instanceId, bytes calldata signature) external {
-        (bool success,) = address(signatureClause).delegatecall(
-            abi.encodeCall(SignatureClauseLogicV3.actionSign, (instanceId, signature))
-        );
+        (bool success,) = address(signatureClause)
+            .delegatecall(abi.encodeCall(SignatureClauseLogicV3.actionSign, (instanceId, signature)));
         require(success, "actionSign failed");
     }
 
@@ -406,14 +403,12 @@ contract MockAgreementB is ICrossChainReceiver {
         external
     {
         // Use delegatecall so storage is in this contract
-        (bool success,) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.intakeDepositor, (instanceId, depositor))
-        );
+        (bool success,) = address(escrowClause)
+            .delegatecall(abi.encodeCall(EscrowClauseLogicV3.intakeDepositor, (instanceId, depositor)));
         require(success, "intakeDepositor failed");
 
-        (success,) = address(escrowClause).delegatecall(
-            abi.encodeCall(EscrowClauseLogicV3.intakeBeneficiary, (instanceId, beneficiary))
-        );
+        (success,) = address(escrowClause)
+            .delegatecall(abi.encodeCall(EscrowClauseLogicV3.intakeBeneficiary, (instanceId, beneficiary)));
         require(success, "intakeBeneficiary failed");
 
         (success,) =
@@ -468,17 +463,18 @@ contract MockAgreementB is ICrossChainReceiver {
         // The adapter will:
         // 1. Record in CrossChainClauseLogicV3 (state = RECEIVED)
         // 2. Release the escrow via EscrowClauseLogicV3
-        (bool success,) = address(adapter).delegatecall(
-            abi.encodeWithSelector(
-                SignatureEscrowCrossChainAdapter.handleIncomingRelease.selector,
-                CROSSCHAIN_INSTANCE_B,
-                sourceChainSelector,
-                sourceAgreement,
-                contentHash,
-                action,
-                extraData
-            )
-        );
+        (bool success,) = address(adapter)
+            .delegatecall(
+                abi.encodeWithSelector(
+                    SignatureEscrowCrossChainAdapter.handleIncomingRelease.selector,
+                    CROSSCHAIN_INSTANCE_B,
+                    sourceChainSelector,
+                    sourceAgreement,
+                    contentHash,
+                    action,
+                    extraData
+                )
+            );
         require(success, "handleIncomingRelease failed");
     }
 

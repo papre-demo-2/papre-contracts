@@ -80,7 +80,6 @@ contract ArbitrationClauseLogicV3 is ClauseBase {
         CLAIMANT_WINS, // Release to claimant (beneficiary)
         RESPONDENT_WINS, // Refund to respondent (client)
         SPLIT // Split between parties (uses splitBasisPoints)
-
     }
 
     // =============================================================

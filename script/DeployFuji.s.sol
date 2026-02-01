@@ -83,9 +83,13 @@ contract DeployFuji is Script {
 
     function run() external {
         console2.log("");
-        console2.log(unicode"╔═══════════════════════════════════════════════════════════════╗");
+        console2.log(
+            unicode"╔═══════════════════════════════════════════════════════════════╗"
+        );
         console2.log(unicode"║          DEPLOY PAPRE MVP CONTRACTS TO FUJI TESTNET           ║");
-        console2.log(unicode"╚═══════════════════════════════════════════════════════════════╝");
+        console2.log(
+            unicode"╚═══════════════════════════════════════════════════════════════╝"
+        );
         console2.log("");
 
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
@@ -101,9 +105,13 @@ contract DeployFuji is Script {
         // 1. Deploy Clause Logic Contracts (shared singletons)
         // =============================================================
 
-        console2.log(unicode"┌─────────────────────────────────────────────────────────────────┐");
+        console2.log(
+            unicode"┌─────────────────────────────────────────────────────────────────┐"
+        );
         console2.log(unicode"│              1. DEPLOYING CLAUSE LOGIC CONTRACTS                │");
-        console2.log(unicode"└─────────────────────────────────────────────────────────────────┘");
+        console2.log(
+            unicode"└─────────────────────────────────────────────────────────────────┘"
+        );
 
         signatureClause = new SignatureClauseLogicV3();
         console2.log("SignatureClauseLogicV3:", address(signatureClause));
@@ -135,9 +143,13 @@ contract DeployFuji is Script {
         // 2. Deploy Adapters
         // =============================================================
 
-        console2.log(unicode"┌─────────────────────────────────────────────────────────────────┐");
+        console2.log(
+            unicode"┌─────────────────────────────────────────────────────────────────┐"
+        );
         console2.log(unicode"│                      2. DEPLOYING ADAPTERS                      │");
-        console2.log(unicode"└─────────────────────────────────────────────────────────────────┘");
+        console2.log(
+            unicode"└─────────────────────────────────────────────────────────────────┘"
+        );
 
         milestoneAdapter = new MilestoneEscrowAdapter(address(milestoneClause), address(escrowClause));
         console2.log("MilestoneEscrowAdapter:", address(milestoneAdapter));
@@ -152,9 +164,13 @@ contract DeployFuji is Script {
         // 3. Deploy Agreement Implementations
         // =============================================================
 
-        console2.log(unicode"┌─────────────────────────────────────────────────────────────────┐");
+        console2.log(
+            unicode"┌─────────────────────────────────────────────────────────────────┐"
+        );
         console2.log(unicode"│               3. DEPLOYING AGREEMENT IMPLEMENTATIONS            │");
-        console2.log(unicode"└─────────────────────────────────────────────────────────────────┘");
+        console2.log(
+            unicode"└─────────────────────────────────────────────────────────────────┘"
+        );
 
         freelanceServiceImpl =
             new FreelanceServiceAgreement(address(signatureClause), address(escrowClause), address(declarativeClause));
@@ -179,9 +195,13 @@ contract DeployFuji is Script {
         // 4. Deploy Factory
         // =============================================================
 
-        console2.log(unicode"┌─────────────────────────────────────────────────────────────────┐");
+        console2.log(
+            unicode"┌─────────────────────────────────────────────────────────────────┐"
+        );
         console2.log(unicode"│                       4. DEPLOYING FACTORY                      │");
-        console2.log(unicode"└─────────────────────────────────────────────────────────────────┘");
+        console2.log(
+            unicode"└─────────────────────────────────────────────────────────────────┘"
+        );
 
         factory = new AgreementFactoryV3(deployer);
         console2.log("AgreementFactoryV3:", address(factory));
@@ -192,9 +212,13 @@ contract DeployFuji is Script {
         // 5. Register Templates
         // =============================================================
 
-        console2.log(unicode"┌─────────────────────────────────────────────────────────────────┐");
+        console2.log(
+            unicode"┌─────────────────────────────────────────────────────────────────┐"
+        );
         console2.log(unicode"│                    5. REGISTERING TEMPLATES                     │");
-        console2.log(unicode"└─────────────────────────────────────────────────────────────────┘");
+        console2.log(
+            unicode"└─────────────────────────────────────────────────────────────────┘"
+        );
 
         factory.registerTemplate(FREELANCE_TYPE, "Freelance Service Agreement", address(freelanceServiceImpl));
         console2.log("Registered: freelance ->", address(freelanceServiceImpl));
@@ -215,9 +239,13 @@ contract DeployFuji is Script {
         // =============================================================
 
         console2.log("");
-        console2.log(unicode"╔═══════════════════════════════════════════════════════════════╗");
+        console2.log(
+            unicode"╔═══════════════════════════════════════════════════════════════╗"
+        );
         console2.log(unicode"║                    DEPLOYMENT COMPLETE!                       ║");
-        console2.log(unicode"╚═══════════════════════════════════════════════════════════════╝");
+        console2.log(
+            unicode"╚═══════════════════════════════════════════════════════════════╝"
+        );
         console2.log("");
 
         console2.log("Add to your .env.local file:");

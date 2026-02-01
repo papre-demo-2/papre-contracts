@@ -217,15 +217,13 @@ contract SubcontractorSafetyNetAgreementTest is Test {
 
         (
             uint256 instanceNumber,
-            address creator,
-            ,
+            address creator,,
             address _client,
             address _subcontractor,
             address _arbitrator,
             address paymentToken,
             uint256 paymentAmount,
-            bytes32 scopeHash,
-            ,
+            bytes32 scopeHash,,
         ) = safetyNet.getInstance(instanceId);
 
         assertEq(instanceNumber, 1);
@@ -285,16 +283,11 @@ contract SubcontractorSafetyNetAgreementTest is Test {
         assertTrue(agreement.isProxyMode());
 
         (
-            uint256 instanceNumber,
-            ,
-            ,
+            uint256 instanceNumber,,,
             address _client,
             address _subcontractor,
-            address _arbitrator,
-            ,
-            uint256 paymentAmount,
-            ,
-            ,
+            address _arbitrator,,
+            uint256 paymentAmount,,,
         ) = agreement.getInstance(0);
 
         assertEq(instanceNumber, 0);

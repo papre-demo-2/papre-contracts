@@ -194,8 +194,7 @@ contract RetainerAgreementTest is Test {
 
         (
             uint256 instanceNumber,
-            address creator,
-            ,
+            address creator,,
             address _client,
             address _contractor,
             address paymentToken,

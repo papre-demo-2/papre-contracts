@@ -108,16 +108,16 @@ contract MilestoneEscrowAdapter {
     ///      Atomically: confirms milestone → releases escrow → marks released
     function confirmAndRelease(bytes32 milestoneInstanceId, uint256 milestoneIndex) external {
         // Step 1: Confirm the milestone (validates msg.sender is client)
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.actionConfirm, (milestoneInstanceId, milestoneIndex))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.actionConfirm, (milestoneInstanceId, milestoneIndex)));
         if (!success) revert ConfirmFailed(data);
 
         // Step 2: Get the linked escrow instance ID
         // Use delegatecall to read from Agreement's storage using clause's code
-        (success, data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneEscrowId, (milestoneInstanceId, milestoneIndex))
-        );
+        (success, data) = address(milestoneClause)
+            .delegatecall(
+                abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneEscrowId, (milestoneInstanceId, milestoneIndex))
+            );
         require(success, "Query escrow ID failed");
         bytes32 escrowInstanceId = abi.decode(data, (bytes32));
 
@@ -127,9 +127,10 @@ contract MilestoneEscrowAdapter {
         if (!success) revert ReleaseFailed(data);
 
         // Step 4: Mark the milestone as released
-        (success, data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.actionMarkReleased, (milestoneInstanceId, milestoneIndex))
-        );
+        (success, data) = address(milestoneClause)
+            .delegatecall(
+                abi.encodeCall(MilestoneClauseLogicV3.actionMarkReleased, (milestoneInstanceId, milestoneIndex))
+            );
         if (!success) revert MarkReleasedFailed(data);
 
         emit MilestoneReleasedViaAdapter(milestoneInstanceId, milestoneIndex, escrowInstanceId, msg.sender);
@@ -142,9 +143,10 @@ contract MilestoneEscrowAdapter {
     /// @dev MUST be called via delegatecall from an Agreement contract.
     ///      Either party (client or beneficiary) can file a dispute.
     function dispute(bytes32 milestoneInstanceId, uint256 milestoneIndex, bytes32 reasonHash) external {
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.actionDispute, (milestoneInstanceId, milestoneIndex, reasonHash))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(
+                abi.encodeCall(MilestoneClauseLogicV3.actionDispute, (milestoneInstanceId, milestoneIndex, reasonHash))
+            );
         if (!success) revert DisputeFailed(data);
 
         emit MilestoneDisputedViaAdapter(milestoneInstanceId, milestoneIndex, reasonHash, msg.sender);
@@ -161,37 +163,40 @@ contract MilestoneEscrowAdapter {
         external
     {
         // Step 1: Resolve the dispute in MilestoneClause
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(
-                MilestoneClauseLogicV3.actionResolveDispute, (milestoneInstanceId, milestoneIndex, releaseToBeneficiary)
-            )
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(
+                abi.encodeCall(
+                    MilestoneClauseLogicV3.actionResolveDispute,
+                    (milestoneInstanceId, milestoneIndex, releaseToBeneficiary)
+                )
+            );
         if (!success) revert ResolveDisputeFailed(data);
 
         // Step 2: Get the linked escrow instance ID
-        (success, data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneEscrowId, (milestoneInstanceId, milestoneIndex))
-        );
+        (success, data) = address(milestoneClause)
+            .delegatecall(
+                abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneEscrowId, (milestoneInstanceId, milestoneIndex))
+            );
         require(success, "Query escrow ID failed");
         bytes32 escrowInstanceId = abi.decode(data, (bytes32));
 
         // Step 3: Execute the escrow action based on resolution
         if (releaseToBeneficiary) {
             // Release to beneficiary (freelancer wins)
-            (success, data) = address(escrowClause).delegatecall(
-                abi.encodeCall(EscrowClauseLogicV3.actionRelease, (escrowInstanceId))
-            );
+            (success, data) = address(escrowClause)
+                .delegatecall(abi.encodeCall(EscrowClauseLogicV3.actionRelease, (escrowInstanceId)));
             if (!success) revert ReleaseFailed(data);
 
             // Mark milestone as released
-            (success, data) = address(milestoneClause).delegatecall(
-                abi.encodeCall(MilestoneClauseLogicV3.actionMarkReleased, (milestoneInstanceId, milestoneIndex))
-            );
+            (success, data) = address(milestoneClause)
+                .delegatecall(
+                    abi.encodeCall(MilestoneClauseLogicV3.actionMarkReleased, (milestoneInstanceId, milestoneIndex))
+                );
             if (!success) revert MarkReleasedFailed(data);
         } else {
             // Refund to depositor (client wins)
-            (success, data) =
-                address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.actionRefund, (escrowInstanceId)));
+            (success, data) = address(escrowClause)
+                .delegatecall(abi.encodeCall(EscrowClauseLogicV3.actionRefund, (escrowInstanceId)));
             if (!success) revert RefundFailed(data);
 
             // Note: actionResolveDispute(false) already sets milestone to MILESTONE_REFUNDED,
@@ -208,18 +213,16 @@ contract MilestoneEscrowAdapter {
     ///      Refunds all funded escrows and cancels the milestone instance.
     function cancelAndRefundAll(bytes32 milestoneInstanceId) external {
         // Get milestone count
-        (bool success, bytes memory data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneCount, (milestoneInstanceId))
-        );
+        (bool success, bytes memory data) = address(milestoneClause)
+            .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneCount, (milestoneInstanceId)));
         require(success, "Query count failed");
         uint256 count = abi.decode(data, (uint256));
 
         // Refund each funded escrow
         for (uint256 i = 0; i < count; i++) {
             // Get escrow ID
-            (success, data) = address(milestoneClause).delegatecall(
-                abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneEscrowId, (milestoneInstanceId, i))
-            );
+            (success, data) = address(milestoneClause)
+                .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.queryMilestoneEscrowId, (milestoneInstanceId, i)));
             require(success, "Query escrow ID failed");
             bytes32 escrowId = abi.decode(data, (bytes32));
 
@@ -229,17 +232,16 @@ contract MilestoneEscrowAdapter {
                     address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.queryIsFunded, (escrowId)));
                 if (success && abi.decode(data, (bool))) {
                     // Refund this escrow
-                    (success,) =
-                        address(escrowClause).delegatecall(abi.encodeCall(EscrowClauseLogicV3.actionRefund, (escrowId)));
+                    (success,) = address(escrowClause)
+                        .delegatecall(abi.encodeCall(EscrowClauseLogicV3.actionRefund, (escrowId)));
                     // Continue even if refund fails (escrow might be in wrong state)
                 }
             }
         }
 
         // Cancel the milestone instance
-        (success, data) = address(milestoneClause).delegatecall(
-            abi.encodeCall(MilestoneClauseLogicV3.actionCancel, (milestoneInstanceId))
-        );
+        (success, data) = address(milestoneClause)
+            .delegatecall(abi.encodeCall(MilestoneClauseLogicV3.actionCancel, (milestoneInstanceId)));
         // Don't revert if cancel fails - escrows are already refunded
     }
 }

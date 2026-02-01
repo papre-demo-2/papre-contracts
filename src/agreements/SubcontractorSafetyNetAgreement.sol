@@ -69,7 +69,6 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
         CLIENT_WINS, // 1 - Full refund to client
         SUBCONTRACTOR_WINS, // 2 - Full release to subcontractor
         SPLIT // 3 - Split per splitBasisPoints (to subcontractor)
-
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -141,7 +140,8 @@ contract SubcontractorSafetyNetAgreement is AgreementBaseV3 {
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.agreement.safetynet.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant SAFETYNET_STORAGE_SLOT = 0x5d4e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d00;
+    bytes32 private constant SAFETYNET_STORAGE_SLOT =
+        0x5d4e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d00;
 
     function _getSafetyNetStorage() internal pure returns (SafetyNetStorage storage $) {
         assembly {

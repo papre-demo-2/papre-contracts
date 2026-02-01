@@ -90,7 +90,8 @@ contract FreelanceServiceAgreement is AgreementBaseV3 {
     }
 
     // keccak256(abi.encode(uint256(keccak256("papre.agreement.freelanceservice.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant FREELANCE_STORAGE_SLOT = 0x2a1b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a00;
+    bytes32 private constant FREELANCE_STORAGE_SLOT =
+        0x2a1b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a00;
 
     function _getFreelanceStorage() internal pure returns (FreelanceStorage storage $) {
         assembly {

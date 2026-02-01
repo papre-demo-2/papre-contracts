@@ -119,11 +119,7 @@ library CrossChainCodec {
     }
 
     /// @notice Decode a "witness confirmed" message
-    function decodeWitnessConfirmed(bytes memory payload)
-        internal
-        pure
-        returns (bytes32 contentHash, address witness)
-    {
+    function decodeWitnessConfirmed(bytes memory payload) internal pure returns (bytes32 contentHash, address witness) {
         bytes32 schemaId;
         (schemaId, contentHash, witness) = abi.decode(payload, (bytes32, bytes32, address));
         if (schemaId != WITNESS_CONFIRMED_V1) {
@@ -212,11 +208,7 @@ library CrossChainCodec {
     /// @param token The token address (address(0) for native)
     /// @param depositor Who funded the escrow
     /// @return Encoded payload
-    function encodeEscrowFunded(uint256 amount, address token, address depositor)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function encodeEscrowFunded(uint256 amount, address token, address depositor) internal pure returns (bytes memory) {
         return abi.encode(ESCROW_FUNDED_V1, amount, token, depositor);
     }
 
@@ -315,11 +307,7 @@ library CrossChainCodec {
     }
 
     /// @notice Decode a "deadline reached" message
-    function decodeDeadlineReached(bytes memory payload)
-        internal
-        pure
-        returns (bytes32 deadlineId, uint256 timestamp)
-    {
+    function decodeDeadlineReached(bytes memory payload) internal pure returns (bytes32 deadlineId, uint256 timestamp) {
         bytes32 schemaId;
         (schemaId, deadlineId, timestamp) = abi.decode(payload, (bytes32, bytes32, uint256));
         if (schemaId != DEADLINE_REACHED_V1) {
@@ -457,11 +445,7 @@ library CrossChainCodec {
     /// @param ruling The ruling value (0=none, 1=party1, 2=party2, etc.)
     /// @param arbiter Who issued the ruling
     /// @return Encoded payload
-    function encodeRulingIssued(bytes32 disputeId, uint8 ruling, address arbiter)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function encodeRulingIssued(bytes32 disputeId, uint8 ruling, address arbiter) internal pure returns (bytes memory) {
         return abi.encode(RULING_ISSUED_V1, disputeId, ruling, arbiter);
     }
 
