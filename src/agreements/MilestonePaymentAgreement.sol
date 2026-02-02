@@ -157,6 +157,9 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     error ContractorAlreadySet();
     error ClientAlreadySet();
     error NotPendingSlot();
+    error OnlyCreator();
+    error DocumentCIDAlreadySet();
+    error InvalidDocumentCID();
 
     // ═══════════════════════════════════════════════════════════════
     //                          EVENTS
@@ -181,6 +184,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     event ContractorSlotClaimed(uint256 indexed instanceId, address indexed contractor);
     event ClientSlotClaimed(uint256 indexed instanceId, address indexed client);
     event TrustedAttestorUpdated(address indexed attestor, bool trusted);
+    event DocumentCIDSet(uint256 indexed instanceId, bytes32 cid);
 
     // ═══════════════════════════════════════════════════════════════
     //                        MODIFIERS
@@ -834,6 +838,30 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     /// @return The keccak256 hash of the document CID on Storacha
     function getDocumentCID(uint256 instanceId) external view validInstance(instanceId) returns (bytes32) {
         return _getMilestoneStorage().instances[instanceId].documentCID;
+    }
+
+    /// @notice Set the document CID for an instance (one-time only)
+    /// @dev Allows the creator to set the document CID after instance creation.
+    ///      This solves the chicken-and-egg problem where the document may need
+    ///      to reference the agreement ID before it can be uploaded.
+    /// @param instanceId The instance to update
+    /// @param cid The keccak256 hash of the document CID on Storacha
+    function setDocumentCID(uint256 instanceId, bytes32 cid) external validInstance(instanceId) {
+        MilestonePaymentStorage storage $ = _getMilestoneStorage();
+        InstanceData storage inst = $.instances[instanceId];
+
+        // Only creator can set
+        if (msg.sender != inst.creator) revert OnlyCreator();
+
+        // Can only set once (if already set, revert)
+        if (inst.documentCID != bytes32(0)) revert DocumentCIDAlreadySet();
+
+        // CID cannot be zero
+        if (cid == bytes32(0)) revert InvalidDocumentCID();
+
+        inst.documentCID = cid;
+
+        emit DocumentCIDSet(instanceId, cid);
     }
 
     // ═══════════════════════════════════════════════════════════════

@@ -189,6 +189,101 @@ contract MilestonePaymentAgreementTest is Test {
         assertEq(agreement.getDocumentCID(0), testCID);
     }
 
+    function test_SetDocumentCID_Success() public {
+        // Create agreement with zero CID
+        bytes32[] memory descriptions = new bytes32[](1);
+        descriptions[0] = keccak256("Test Milestone");
+
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1 ether;
+
+        uint256[] memory deadlines = new uint256[](1);
+        deadlines[0] = block.timestamp + 1 weeks;
+
+        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
+
+        // Initialize with zero CID - in proxy mode, creator is set to client
+        agreement.initialize(client, contractor, address(0), descriptions, amounts, deadlines, bytes32(0));
+
+        // Verify CID is zero initially
+        assertEq(agreement.getDocumentCID(0), bytes32(0));
+
+        // Set CID as client (who is the creator in proxy mode)
+        bytes32 newCID = keccak256("uploaded-document-cid");
+        vm.prank(client);
+        agreement.setDocumentCID(0, newCID);
+
+        // Verify CID is now set
+        assertEq(agreement.getDocumentCID(0), newCID);
+    }
+
+    function test_SetDocumentCID_RevertsIfNotCreator() public {
+        bytes32[] memory descriptions = new bytes32[](1);
+        descriptions[0] = keccak256("Test Milestone");
+
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1 ether;
+
+        uint256[] memory deadlines = new uint256[](1);
+        deadlines[0] = block.timestamp + 1 weeks;
+
+        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
+
+        // In proxy mode, creator is client
+        agreement.initialize(client, contractor, address(0), descriptions, amounts, deadlines, bytes32(0));
+
+        // Try to set CID as contractor (not the creator)
+        bytes32 newCID = keccak256("uploaded-document-cid");
+        vm.prank(contractor);
+        vm.expectRevert(MilestonePaymentAgreement.OnlyCreator.selector);
+        agreement.setDocumentCID(0, newCID);
+    }
+
+    function test_SetDocumentCID_RevertsIfAlreadySet() public {
+        bytes32 initialCID = keccak256("initial-document-cid");
+
+        bytes32[] memory descriptions = new bytes32[](1);
+        descriptions[0] = keccak256("Test Milestone");
+
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1 ether;
+
+        uint256[] memory deadlines = new uint256[](1);
+        deadlines[0] = block.timestamp + 1 weeks;
+
+        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
+
+        // Initialize with non-zero CID - creator is client in proxy mode
+        agreement.initialize(client, contractor, address(0), descriptions, amounts, deadlines, initialCID);
+
+        // Try to set CID again as client (the creator)
+        bytes32 newCID = keccak256("new-document-cid");
+        vm.prank(client);
+        vm.expectRevert(MilestonePaymentAgreement.DocumentCIDAlreadySet.selector);
+        agreement.setDocumentCID(0, newCID);
+    }
+
+    function test_SetDocumentCID_RevertsIfZeroCID() public {
+        bytes32[] memory descriptions = new bytes32[](1);
+        descriptions[0] = keccak256("Test Milestone");
+
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1 ether;
+
+        uint256[] memory deadlines = new uint256[](1);
+        deadlines[0] = block.timestamp + 1 weeks;
+
+        MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
+
+        // In proxy mode, creator is client
+        agreement.initialize(client, contractor, address(0), descriptions, amounts, deadlines, bytes32(0));
+
+        // Try to set zero CID as client (the creator)
+        vm.prank(client);
+        vm.expectRevert(MilestonePaymentAgreement.InvalidDocumentCID.selector);
+        agreement.setDocumentCID(0, bytes32(0));
+    }
+
     function test_Initialize_RevertsOnZeroMilestones() public {
         MilestonePaymentAgreement agreement = MilestonePaymentAgreement(payable(Clones.clone(address(implementation))));
 
