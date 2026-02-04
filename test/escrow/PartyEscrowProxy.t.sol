@@ -15,7 +15,7 @@ contract PartyEscrowProxyTest is Test {
     address public attacker = makeAddr("attacker");
 
     uint256 constant INITIAL_BALANCE = 100_000e6; // 100k USDC
-    uint256 constant PROJECT_AMOUNT = 6_000e6;    // 6k USDC (for 3 milestones)
+    uint256 constant PROJECT_AMOUNT = 6_000e6; // 6k USDC (for 3 milestones)
 
     function setUp() public {
         // Deploy factory
@@ -38,14 +38,8 @@ contract PartyEscrowProxyTest is Test {
     function test_CreateEscrow_Success() public {
         bytes32 salt = keccak256("test-agreement-1");
 
-        address proxy = factory.createEscrow(
-            client,
-            contractor,
-            address(usdc),
-            PartyEscrowProxy.DisputeMode.FROZEN,
-            0,
-            salt
-        );
+        address proxy =
+            factory.createEscrow(client, contractor, address(usdc), PartyEscrowProxy.DisputeMode.FROZEN, 0, salt);
 
         assertTrue(factory.isProxy(proxy));
 
@@ -80,14 +74,8 @@ contract PartyEscrowProxyTest is Test {
 
         address predicted = factory.predictAddress(client, contractor, salt);
 
-        address actual = factory.createEscrow(
-            client,
-            contractor,
-            address(usdc),
-            PartyEscrowProxy.DisputeMode.FROZEN,
-            0,
-            salt
-        );
+        address actual =
+            factory.createEscrow(client, contractor, address(usdc), PartyEscrowProxy.DisputeMode.FROZEN, 0, salt);
 
         assertEq(actual, predicted);
     }
@@ -95,46 +83,21 @@ contract PartyEscrowProxyTest is Test {
     function test_CreateEscrow_RevertIfAlreadyExists() public {
         bytes32 salt = keccak256("duplicate-test");
 
-        factory.createEscrow(
-            client,
-            contractor,
-            address(usdc),
-            PartyEscrowProxy.DisputeMode.FROZEN,
-            0,
-            salt
-        );
+        factory.createEscrow(client, contractor, address(usdc), PartyEscrowProxy.DisputeMode.FROZEN, 0, salt);
 
         vm.expectRevert(PartyEscrowFactory.ProxyAlreadyExists.selector);
-        factory.createEscrow(
-            client,
-            contractor,
-            address(usdc),
-            PartyEscrowProxy.DisputeMode.FROZEN,
-            0,
-            salt
-        );
+        factory.createEscrow(client, contractor, address(usdc), PartyEscrowProxy.DisputeMode.FROZEN, 0, salt);
     }
 
     function test_Initialize_RevertIfCalledTwice() public {
         address proxy = factory.createEscrow(
-            client,
-            contractor,
-            address(usdc),
-            PartyEscrowProxy.DisputeMode.FROZEN,
-            0,
-            keccak256("init-test")
+            client, contractor, address(usdc), PartyEscrowProxy.DisputeMode.FROZEN, 0, keccak256("init-test")
         );
 
         PartyEscrowProxy escrow = PartyEscrowProxy(payable(proxy));
 
         vm.expectRevert(PartyEscrowProxy.AlreadyInitialized.selector);
-        escrow.initialize(
-            client,
-            contractor,
-            address(usdc),
-            PartyEscrowProxy.DisputeMode.FROZEN,
-            0
-        );
+        escrow.initialize(client, contractor, address(usdc), PartyEscrowProxy.DisputeMode.FROZEN, 0);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -503,8 +466,7 @@ contract PartyEscrowProxyTest is Test {
         vm.prank(client);
         escrow.approveRelease(releaseId, 1000e6);
 
-        (clientApproved, contractorApproved, amount, executed) =
-            escrow.getReleaseStatus(releaseId);
+        (clientApproved, contractorApproved, amount, executed) = escrow.getReleaseStatus(releaseId);
         assertTrue(clientApproved);
         assertFalse(contractorApproved);
         assertEq(amount, 1000e6);
@@ -540,8 +502,7 @@ contract PartyEscrowProxyTest is Test {
         escrow.approveRelease(releaseId, 1000e6);
         escrow.executeRelease(releaseId);
 
-        (uint256 deposited, uint256 released, uint256 refunded, uint256 currentBalance) =
-            escrow.getTotals();
+        (uint256 deposited, uint256 released, uint256 refunded, uint256 currentBalance) = escrow.getTotals();
 
         assertEq(deposited, PROJECT_AMOUNT);
         assertEq(released, 1000e6);
@@ -557,14 +518,10 @@ contract PartyEscrowProxyTest is Test {
         bytes32 salt1 = keccak256("proxy-1");
         bytes32 salt2 = keccak256("proxy-2");
 
-        address proxy1 = factory.createEscrow(
-            client, contractor, address(usdc),
-            PartyEscrowProxy.DisputeMode.FROZEN, 0, salt1
-        );
-        address proxy2 = factory.createEscrow(
-            client, contractor, address(usdc),
-            PartyEscrowProxy.DisputeMode.FROZEN, 0, salt2
-        );
+        address proxy1 =
+            factory.createEscrow(client, contractor, address(usdc), PartyEscrowProxy.DisputeMode.FROZEN, 0, salt1);
+        address proxy2 =
+            factory.createEscrow(client, contractor, address(usdc), PartyEscrowProxy.DisputeMode.FROZEN, 0, salt2);
 
         assertEq(factory.getProxyCount(), 2);
 

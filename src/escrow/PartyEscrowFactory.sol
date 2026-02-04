@@ -100,13 +100,8 @@ contract PartyEscrowFactory {
         proxy = implementation.cloneDeterministic(finalSalt);
 
         // Initialize
-        try PartyEscrowProxy(payable(proxy)).initialize(
-            client,
-            contractor,
-            token,
-            disputeMode,
-            disputeTimeoutDays
-        ) {} catch {
+        try PartyEscrowProxy(payable(proxy)).initialize(client, contractor, token, disputeMode, disputeTimeoutDays) {}
+        catch {
             revert InitializationFailed();
         }
 
@@ -116,15 +111,7 @@ contract PartyEscrowFactory {
         proxyesByParty[client].push(proxy);
         proxyesByParty[contractor].push(proxy);
 
-        emit ProxyCreated(
-            proxy,
-            client,
-            contractor,
-            token,
-            disputeMode,
-            disputeTimeoutDays,
-            salt
-        );
+        emit ProxyCreated(proxy, client, contractor, token, disputeMode, disputeTimeoutDays, salt);
     }
 
     /// @notice Predict the address of a proxy before deployment
@@ -132,11 +119,7 @@ contract PartyEscrowFactory {
     /// @param contractor The contractor address
     /// @param salt Unique salt
     /// @return The predicted proxy address
-    function predictAddress(
-        address client,
-        address contractor,
-        bytes32 salt
-    ) external view returns (address) {
+    function predictAddress(address client, address contractor, bytes32 salt) external view returns (address) {
         bytes32 finalSalt = _computeSalt(client, contractor, salt);
         return implementation.predictDeterministicAddress(finalSalt, address(this));
     }
@@ -167,11 +150,7 @@ contract PartyEscrowFactory {
 
     /// @notice Compute the final salt from client, contractor, and user salt
     /// @dev This ensures the same parties with the same salt always get the same address
-    function _computeSalt(
-        address client,
-        address contractor,
-        bytes32 salt
-    ) internal pure returns (bytes32) {
+    function _computeSalt(address client, address contractor, bytes32 salt) internal pure returns (bytes32) {
         return keccak256(abi.encode(client, contractor, salt));
     }
 }

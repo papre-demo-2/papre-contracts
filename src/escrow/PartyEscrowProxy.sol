@@ -33,9 +33,9 @@ contract PartyEscrowProxy is ReentrancyGuard {
     // ═══════════════════════════════════════════════════════════════
 
     enum DisputeMode {
-        FROZEN,        // 0 - Funds locked until both parties agree
-        AUTO_REFUND,   // 1 - After timeout, refund to client
-        AUTO_RELEASE   // 2 - After timeout, release to contractor
+        FROZEN, // 0 - Funds locked until both parties agree
+        AUTO_REFUND, // 1 - After timeout, refund to client
+        AUTO_RELEASE // 2 - After timeout, release to contractor
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -117,41 +117,17 @@ contract PartyEscrowProxy is ReentrancyGuard {
         uint256 disputeTimeout
     );
 
-    event Deposited(
-        address indexed depositor,
-        uint256 amount,
-        uint256 totalDeposited
-    );
+    event Deposited(address indexed depositor, uint256 amount, uint256 totalDeposited);
 
-    event ReleaseApproved(
-        bytes32 indexed releaseId,
-        address indexed approver,
-        uint256 amount
-    );
+    event ReleaseApproved(bytes32 indexed releaseId, address indexed approver, uint256 amount);
 
-    event ReleaseExecuted(
-        bytes32 indexed releaseId,
-        address indexed contractor,
-        uint256 amount
-    );
+    event ReleaseExecuted(bytes32 indexed releaseId, address indexed contractor, uint256 amount);
 
-    event RefundApproved(
-        bytes32 indexed refundId,
-        address indexed approver,
-        uint256 amount
-    );
+    event RefundApproved(bytes32 indexed refundId, address indexed approver, uint256 amount);
 
-    event RefundExecuted(
-        bytes32 indexed refundId,
-        address indexed client,
-        uint256 amount
-    );
+    event RefundExecuted(bytes32 indexed refundId, address indexed client, uint256 amount);
 
-    event DisputeAutoResolved(
-        address indexed recipient,
-        uint256 amount,
-        DisputeMode mode
-    );
+    event DisputeAutoResolved(address indexed recipient, uint256 amount, DisputeMode mode);
 
     // ═══════════════════════════════════════════════════════════════
     //                          MODIFIERS
@@ -238,12 +214,7 @@ contract PartyEscrowProxy is ReentrancyGuard {
     /// @dev Both client AND contractor must approve before execution
     /// @param releaseId Unique identifier for this release (e.g., keccak256(instanceId, milestoneIndex))
     /// @param amount Amount to release
-    function approveRelease(bytes32 releaseId, uint256 amount)
-        external
-        whenInitialized
-        onlyParty
-        nonReentrant
-    {
+    function approveRelease(bytes32 releaseId, uint256 amount) external whenInitialized onlyParty nonReentrant {
         if (releaseExecuted[releaseId]) revert AlreadyExecuted();
         if (releaseApprovals[releaseId][msg.sender]) revert AlreadyApproved();
 
@@ -263,11 +234,7 @@ contract PartyEscrowProxy is ReentrancyGuard {
 
     /// @notice Execute a release after both parties approved
     /// @param releaseId The release to execute
-    function executeRelease(bytes32 releaseId)
-        external
-        whenInitialized
-        nonReentrant
-    {
+    function executeRelease(bytes32 releaseId) external whenInitialized nonReentrant {
         if (releaseExecuted[releaseId]) revert AlreadyExecuted();
         if (!releaseApprovals[releaseId][client] || !releaseApprovals[releaseId][contractor]) {
             revert NotBothApproved();
@@ -293,12 +260,7 @@ contract PartyEscrowProxy is ReentrancyGuard {
     /// @dev Both client AND contractor must approve before execution
     /// @param refundId Unique identifier for this refund
     /// @param amount Amount to refund
-    function approveRefund(bytes32 refundId, uint256 amount)
-        external
-        whenInitialized
-        onlyParty
-        nonReentrant
-    {
+    function approveRefund(bytes32 refundId, uint256 amount) external whenInitialized onlyParty nonReentrant {
         if (refundExecuted[refundId]) revert AlreadyExecuted();
         if (refundApprovals[refundId][msg.sender]) revert AlreadyApproved();
 
@@ -318,11 +280,7 @@ contract PartyEscrowProxy is ReentrancyGuard {
 
     /// @notice Execute a refund after both parties approved
     /// @param refundId The refund to execute
-    function executeRefund(bytes32 refundId)
-        external
-        whenInitialized
-        nonReentrant
-    {
+    function executeRefund(bytes32 refundId) external whenInitialized nonReentrant {
         if (refundExecuted[refundId]) revert AlreadyExecuted();
         if (!refundApprovals[refundId][client] || !refundApprovals[refundId][contractor]) {
             revert NotBothApproved();
@@ -346,11 +304,7 @@ contract PartyEscrowProxy is ReentrancyGuard {
 
     /// @notice Execute automatic dispute resolution after timeout
     /// @dev Callable by anyone after disputeTimeout has elapsed
-    function executeDisputeResolution()
-        external
-        whenInitialized
-        nonReentrant
-    {
+    function executeDisputeResolution() external whenInitialized nonReentrant {
         if (disputeMode == DisputeMode.FROZEN) {
             revert AutoResolutionNotEnabled();
         }
@@ -407,12 +361,7 @@ contract PartyEscrowProxy is ReentrancyGuard {
     function getReleaseStatus(bytes32 releaseId)
         external
         view
-        returns (
-            bool clientApproved,
-            bool contractorApproved,
-            uint256 amount,
-            bool executed
-        )
+        returns (bool clientApproved, bool contractorApproved, uint256 amount, bool executed)
     {
         return (
             releaseApprovals[releaseId][client],
@@ -431,12 +380,7 @@ contract PartyEscrowProxy is ReentrancyGuard {
     function getRefundStatus(bytes32 refundId)
         external
         view
-        returns (
-            bool clientApproved,
-            bool contractorApproved,
-            uint256 amount,
-            bool executed
-        )
+        returns (bool clientApproved, bool contractorApproved, uint256 amount, bool executed)
     {
         return (
             refundApprovals[refundId][client],
@@ -459,33 +403,16 @@ contract PartyEscrowProxy is ReentrancyGuard {
             uint256 _lastActivityTimestamp
         )
     {
-        return (
-            client,
-            contractor,
-            token,
-            disputeMode,
-            disputeTimeout,
-            lastActivityTimestamp
-        );
+        return (client, contractor, token, disputeMode, disputeTimeout, lastActivityTimestamp);
     }
 
     /// @notice Get escrow totals
     function getTotals()
         external
         view
-        returns (
-            uint256 deposited,
-            uint256 released,
-            uint256 refunded,
-            uint256 currentBalance
-        )
+        returns (uint256 deposited, uint256 released, uint256 refunded, uint256 currentBalance)
     {
-        return (
-            totalDeposited,
-            totalReleased,
-            totalRefunded,
-            balance()
-        );
+        return (totalDeposited, totalReleased, totalRefunded, balance());
     }
 
     // ═══════════════════════════════════════════════════════════════
