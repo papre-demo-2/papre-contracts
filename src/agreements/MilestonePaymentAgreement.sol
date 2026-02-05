@@ -6,6 +6,7 @@ import {SignatureClauseLogicV3} from "../clauses/attestation/SignatureClauseLogi
 import {EscrowClauseLogicV3} from "../clauses/financial/EscrowClauseLogicV3.sol";
 import {MilestoneClauseLogicV3} from "../clauses/orchestration/MilestoneClauseLogicV3.sol";
 import {MilestoneEscrowAdapter} from "../adapters/MilestoneEscrowAdapter.sol";
+import {IDisputable} from "../interfaces/IDisputable.sol";
 
 /// @title MilestonePaymentAgreement
 /// @notice Multi-milestone project agreement with staged escrow releases
@@ -54,7 +55,7 @@ import {MilestoneEscrowAdapter} from "../adapters/MilestoneEscrowAdapter.sol";
 ///      - SignatureClauseLogicV3: Both parties sign to agree on terms
 ///      - EscrowClauseLogicV3: Multiple instances (one per milestone)
 ///      - MilestoneClauseLogicV3: Track milestone state and deadlines
-contract MilestonePaymentAgreement is AgreementBaseV3 {
+contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
     // ═══════════════════════════════════════════════════════════════
     //                        CONSTANTS
     // ═══════════════════════════════════════════════════════════════
@@ -112,6 +113,10 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
         bool funded;
         uint8 completedMilestones;
         bool cancelled;
+        // Arbitration (IDisputable)
+        address arbitrationAgreement;
+        uint256 arbitrationInstanceId;
+        bool disputeResolved;
     }
 
     /// @custom:storage-location erc7201:papre.agreement.milestonepayment.storage
@@ -160,6 +165,12 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     error OnlyCreator();
     error DocumentCIDAlreadySet();
     error InvalidDocumentCID();
+    error OnlyArbitrationAgreement();
+    error ArbitrationAlreadyLinked();
+    error ArbitrationNotLinked();
+    error DisputeAlreadyResolved();
+    error CannotInitiateArbitrationNow();
+    error InvalidRuling();
 
     // ═══════════════════════════════════════════════════════════════
     //                          EVENTS
@@ -865,6 +876,162 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
     }
 
     // ═══════════════════════════════════════════════════════════════
+    //                    IDISPUTABLE IMPLEMENTATION
+    // ═══════════════════════════════════════════════════════════════
+
+    /// @inheritdoc IDisputable
+    function executeArbitrationRuling(
+        uint256 instanceId,
+        uint8 ruling,
+        uint256 splitBasisPoints
+    ) external override validInstance(instanceId) {
+        InstanceData storage inst = _getMilestoneStorage().instances[instanceId];
+
+        // Only the linked arbitration agreement can call this
+        if (msg.sender != inst.arbitrationAgreement) revert OnlyArbitrationAgreement();
+        if (inst.disputeResolved) revert DisputeAlreadyResolved();
+
+        inst.disputeResolved = true;
+
+        // Calculate total remaining (unfunded milestones)
+        uint256 remainingAmount = 0;
+        for (uint8 i = 0; i < inst.milestoneCount; i++) {
+            // Check if this escrow is still funded (not released)
+            bytes memory fundedResult = _delegateViewToClause(
+                address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.queryIsFunded, (inst.escrowIds[i]))
+            );
+            if (abi.decode(fundedResult, (bool))) {
+                remainingAmount += inst.milestones[i].amount;
+            }
+        }
+
+        if (remainingAmount == 0) {
+            // No funds to distribute
+            emit ArbitrationRulingExecuted(instanceId, ruling, splitBasisPoints, address(0), address(0));
+            return;
+        }
+
+        // Execute ruling
+        if (ruling == 1) {
+            // CLAIMANT_WINS (contractor) - Release all remaining milestones
+            _releaseAllRemainingMilestones(inst, instanceId);
+            emit ArbitrationRulingExecuted(instanceId, ruling, splitBasisPoints, inst.contractor, address(0));
+        } else if (ruling == 2) {
+            // RESPONDENT_WINS (client) - Refund all remaining milestones
+            _refundAllRemainingMilestones(inst, instanceId);
+            emit ArbitrationRulingExecuted(instanceId, ruling, splitBasisPoints, address(0), inst.client);
+        } else if (ruling == 3) {
+            // SPLIT - Distribute based on splitBasisPoints
+            _splitRemainingMilestones(inst, instanceId, splitBasisPoints);
+            emit ArbitrationRulingExecuted(instanceId, ruling, splitBasisPoints, inst.contractor, inst.client);
+        } else {
+            revert InvalidRuling();
+        }
+    }
+
+    /// @inheritdoc IDisputable
+    function canInitiateArbitration(uint256 instanceId) external view override returns (bool) {
+        MilestonePaymentStorage storage $ = _getMilestoneStorage();
+        if ($.instances[instanceId].creator == address(0)) return false; // Instance doesn't exist
+
+        InstanceData storage inst = $.instances[instanceId];
+
+        // Can initiate if:
+        // 1. Funded
+        // 2. Not already in dispute/resolved
+        // 3. Not cancelled
+        // 4. Not all milestones complete
+        return inst.funded &&
+               !inst.disputeResolved &&
+               !inst.cancelled &&
+               inst.completedMilestones < inst.milestoneCount;
+    }
+
+    /// @inheritdoc IDisputable
+    function getArbitrationAgreement(uint256 instanceId)
+        external
+        view
+        override
+        validInstance(instanceId)
+        returns (address)
+    {
+        return _getMilestoneStorage().instances[instanceId].arbitrationAgreement;
+    }
+
+    /// @inheritdoc IDisputable
+    function getArbitrationInstanceId(uint256 instanceId)
+        external
+        view
+        override
+        validInstance(instanceId)
+        returns (uint256)
+    {
+        return _getMilestoneStorage().instances[instanceId].arbitrationInstanceId;
+    }
+
+    /// @inheritdoc IDisputable
+    function getArbitrationParties(uint256 instanceId)
+        external
+        view
+        override
+        validInstance(instanceId)
+        returns (address claimant, address respondent)
+    {
+        InstanceData storage inst = _getMilestoneStorage().instances[instanceId];
+        // Claimant = contractor (delivers work), Respondent = client (pays)
+        return (inst.contractor, inst.client);
+    }
+
+    /// @inheritdoc IDisputable
+    function linkArbitration(
+        uint256 instanceId,
+        address arbitrationAgreement,
+        uint256 arbitrationInstanceId
+    ) external override validInstance(instanceId) notCancelled(instanceId) {
+        InstanceData storage inst = _getMilestoneStorage().instances[instanceId];
+
+        // Can only link if not already linked
+        if (inst.arbitrationAgreement != address(0)) revert ArbitrationAlreadyLinked();
+
+        // Only parties can link (at creation or with mutual consent later)
+        // For simplicity, allow either party to link initially
+        if (msg.sender != inst.client && msg.sender != inst.contractor) {
+            // Could also be called by ArbitrationAgreement itself during creation
+            // In that case, we trust it if it's linking to itself
+            if (msg.sender != arbitrationAgreement) {
+                revert OnlyClientOrContractor();
+            }
+        }
+
+        inst.arbitrationAgreement = arbitrationAgreement;
+        inst.arbitrationInstanceId = arbitrationInstanceId;
+
+        emit ArbitrationLinked(instanceId, arbitrationAgreement, arbitrationInstanceId);
+    }
+
+    /// @inheritdoc IDisputable
+    function hasArbitrationLinked(uint256 instanceId)
+        external
+        view
+        override
+        validInstance(instanceId)
+        returns (bool)
+    {
+        return _getMilestoneStorage().instances[instanceId].arbitrationAgreement != address(0);
+    }
+
+    /// @inheritdoc IDisputable
+    function isDisputeResolved(uint256 instanceId)
+        external
+        view
+        override
+        validInstance(instanceId)
+        returns (bool)
+    {
+        return _getMilestoneStorage().instances[instanceId].disputeResolved;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     //                    LEGACY COMPATIBILITY (PROXY MODE)
     // ═══════════════════════════════════════════════════════════════
 
@@ -1035,6 +1202,105 @@ contract MilestonePaymentAgreement is AgreementBaseV3 {
         _delegateToClause(
             address(milestoneClause), abi.encodeCall(MilestoneClauseLogicV3.intakeReady, (milestoneTrackerId))
         );
+    }
+
+    /// @notice Release all remaining funded milestones to contractor
+    function _releaseAllRemainingMilestones(InstanceData storage inst, uint256 instanceId) internal {
+        for (uint8 i = 0; i < inst.milestoneCount; i++) {
+            bytes memory fundedResult = _delegateViewToClause(
+                address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.queryIsFunded, (inst.escrowIds[i]))
+            );
+            if (abi.decode(fundedResult, (bool))) {
+                // Release this milestone to contractor
+                _delegateToClause(
+                    address(escrowClause),
+                    abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowIds[i]))
+                );
+                inst.milestones[i].releasedAt = block.timestamp;
+                inst.completedMilestones++;
+                emit MilestoneApproved(instanceId, i, inst.milestones[i].amount);
+            }
+        }
+    }
+
+    /// @notice Refund all remaining funded milestones to client
+    function _refundAllRemainingMilestones(InstanceData storage inst, uint256 instanceId) internal {
+        for (uint8 i = 0; i < inst.milestoneCount; i++) {
+            bytes memory fundedResult = _delegateViewToClause(
+                address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.queryIsFunded, (inst.escrowIds[i]))
+            );
+            if (abi.decode(fundedResult, (bool))) {
+                // Refund this milestone to client (depositor)
+                // Use actionRefund which has no authorization check (authorization is at Agreement level)
+                _delegateToClause(
+                    address(escrowClause),
+                    abi.encodeCall(EscrowClauseLogicV3.actionRefund, (inst.escrowIds[i]))
+                );
+            }
+        }
+        // Mark as cancelled since funds were refunded
+        inst.cancelled = true;
+        emit ProjectCancelled(instanceId, address(this));
+    }
+
+    /// @notice Split remaining milestones based on basis points
+    /// @param splitBasisPoints Claimant's (contractor's) share in basis points (0-10000)
+    function _splitRemainingMilestones(InstanceData storage inst, uint256 instanceId, uint256 splitBasisPoints) internal {
+        // Calculate total remaining
+        uint256 remainingAmount = 0;
+        for (uint8 i = 0; i < inst.milestoneCount; i++) {
+            bytes memory fundedResult = _delegateViewToClause(
+                address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.queryIsFunded, (inst.escrowIds[i]))
+            );
+            if (abi.decode(fundedResult, (bool))) {
+                remainingAmount += inst.milestones[i].amount;
+            }
+        }
+
+        if (remainingAmount == 0) return;
+
+        // Calculate split amounts
+        uint256 contractorAmount = (remainingAmount * splitBasisPoints) / 10000;
+        uint256 clientAmount = remainingAmount - contractorAmount;
+
+        // For simplicity with the existing escrow structure, we'll:
+        // 1. Release milestones up to contractor's share
+        // 2. Cancel/refund remaining milestones for client's share
+        uint256 releasedToContractor = 0;
+
+        for (uint8 i = 0; i < inst.milestoneCount; i++) {
+            bytes memory fundedResult = _delegateViewToClause(
+                address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.queryIsFunded, (inst.escrowIds[i]))
+            );
+            if (abi.decode(fundedResult, (bool))) {
+                uint256 milestoneAmount = inst.milestones[i].amount;
+
+                if (releasedToContractor + milestoneAmount <= contractorAmount) {
+                    // Release full milestone to contractor
+                    _delegateToClause(
+                        address(escrowClause),
+                        abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowIds[i]))
+                    );
+                    releasedToContractor += milestoneAmount;
+                    inst.milestones[i].releasedAt = block.timestamp;
+                    inst.completedMilestones++;
+                    emit MilestoneApproved(instanceId, i, milestoneAmount);
+                } else {
+                    // Cancel/refund to client
+                    _delegateToClause(
+                        address(escrowClause),
+                        abi.encodeCall(EscrowClauseLogicV3.actionInitiateCancel, (inst.escrowIds[i]))
+                    );
+                }
+            }
+        }
+
+        // If we couldn't exactly match due to milestone granularity, handle remainder
+        // This is a simplification - a more sophisticated approach would use partial releases
+        // But that would require changing the escrow clause
+
+        inst.cancelled = true;
+        emit ProjectCancelled(instanceId, address(this));
     }
 
     // Allow receiving ETH
