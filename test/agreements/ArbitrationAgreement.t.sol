@@ -36,17 +36,15 @@ contract ArbitrationAgreementTest is Test {
         signatureClause = new SignatureClauseLogicV3();
         escrowClause = new EscrowClauseLogicV3();
         milestoneClause = new MilestoneClauseLogicV3();
-        milestoneAdapter = new MilestoneEscrowAdapter(
-            address(milestoneClause),
-            address(escrowClause)
-        );
+        milestoneAdapter = new MilestoneEscrowAdapter(address(milestoneClause), address(escrowClause));
 
         // Deploy agreements
         milestone = new MilestonePaymentAgreement(
             address(signatureClause),
             address(escrowClause),
             address(milestoneClause),
-            address(milestoneAdapter)
+            address(milestoneAdapter),
+            address(0) // reputationAdapter - not needed for arbitration tests
         );
 
         arbitration = new ArbitrationAgreement();
@@ -114,15 +112,8 @@ contract ArbitrationAgreementTest is Test {
     function test_CanInitiateArbitration_False_NotFunded() public {
         // Create but don't fund
         vm.prank(client);
-        uint256 milestoneInstanceId = milestone.createInstance(
-            client,
-            contractor,
-            address(0),
-            descriptions,
-            amounts,
-            deadlines,
-            documentCID
-        );
+        uint256 milestoneInstanceId =
+            milestone.createInstance(client, contractor, address(0), descriptions, amounts, deadlines, documentCID);
 
         bool canInitiate = milestone.canInitiateArbitration(milestoneInstanceId);
         assertFalse(canInitiate, "Should not be able to initiate arbitration on unfunded agreement");
@@ -177,10 +168,7 @@ contract ArbitrationAgreementTest is Test {
 
         vm.prank(client);
         uint256 arbInstanceId = arbitration.createInstance(
-            address(milestone),
-            milestoneInstanceId,
-            arbitration.PRESET_SIMPLE(),
-            arbitrator
+            address(milestone), milestoneInstanceId, arbitration.PRESET_SIMPLE(), arbitrator
         );
 
         assertEq(arbInstanceId, 1, "Should be instance 1");
@@ -209,10 +197,7 @@ contract ArbitrationAgreementTest is Test {
 
         vm.prank(client);
         uint256 arbInstanceId = arbitration.createInstance(
-            address(milestone),
-            milestoneInstanceId,
-            arbitration.PRESET_SIMPLE(),
-            arbitrator
+            address(milestone), milestoneInstanceId, arbitration.PRESET_SIMPLE(), arbitrator
         );
 
         // Contractor files claim
@@ -220,14 +205,7 @@ contract ArbitrationAgreementTest is Test {
         vm.prank(contractor);
         arbitration.fileClaim(arbInstanceId, claimHash);
 
-        (
-            uint64 filedAt,
-            uint64 evidenceDeadline,
-            ,
-            ,
-            ,
-
-        ) = arbitration.getInstanceState(arbInstanceId);
+        (uint64 filedAt, uint64 evidenceDeadline,,,,) = arbitration.getInstanceState(arbInstanceId);
 
         assertGt(filedAt, 0, "Filed timestamp should be set");
         assertGt(evidenceDeadline, filedAt, "Evidence deadline should be after filed time");
@@ -238,10 +216,7 @@ contract ArbitrationAgreementTest is Test {
 
         vm.prank(client);
         uint256 arbInstanceId = arbitration.createInstance(
-            address(milestone),
-            milestoneInstanceId,
-            arbitration.PRESET_SIMPLE(),
-            arbitrator
+            address(milestone), milestoneInstanceId, arbitration.PRESET_SIMPLE(), arbitrator
         );
 
         // File claim
@@ -263,10 +238,7 @@ contract ArbitrationAgreementTest is Test {
 
         vm.prank(client);
         uint256 arbInstanceId = arbitration.createInstance(
-            address(milestone),
-            milestoneInstanceId,
-            arbitration.PRESET_SIMPLE(),
-            arbitrator
+            address(milestone), milestoneInstanceId, arbitration.PRESET_SIMPLE(), arbitrator
         );
 
         // Debug: Check arbitrator is stored correctly
@@ -305,21 +277,9 @@ contract ArbitrationAgreementTest is Test {
         // Note: Get constant BEFORE prank to avoid consuming the prank
         uint8 claimantWins = arbitration.RULING_CLAIMANT_WINS();
         vm.prank(arbitrator);
-        arbitration.rule(
-            arbInstanceId,
-            claimantWins,
-            0,
-            keccak256("justification")
-        );
+        arbitration.rule(arbInstanceId, claimantWins, 0, keccak256("justification"));
 
-        (
-            ,
-            ,
-            uint8 ruling,
-            ,
-            uint64 ruledAt,
-
-        ) = arbitration.getInstanceState(arbInstanceId);
+        (,, uint8 ruling,, uint64 ruledAt,) = arbitration.getInstanceState(arbInstanceId);
 
         assertEq(ruling, arbitration.RULING_CLAIMANT_WINS());
         assertGt(ruledAt, 0, "Ruled timestamp should be set");
@@ -333,10 +293,7 @@ contract ArbitrationAgreementTest is Test {
 
         vm.prank(client);
         uint256 arbInstanceId = arbitration.createInstance(
-            address(milestone),
-            milestoneInstanceId,
-            arbitration.PRESET_SIMPLE(),
-            arbitrator
+            address(milestone), milestoneInstanceId, arbitration.PRESET_SIMPLE(), arbitrator
         );
 
         // File claim
@@ -350,23 +307,14 @@ contract ArbitrationAgreementTest is Test {
         // Note: Get constant BEFORE prank to avoid consuming the prank on staticcall
         uint8 claimantWins = arbitration.RULING_CLAIMANT_WINS();
         vm.prank(arbitrator);
-        arbitration.rule(
-            arbInstanceId,
-            claimantWins,
-            0,
-            keccak256("justification")
-        );
+        arbitration.rule(arbInstanceId, claimantWins, 0, keccak256("justification"));
 
         // Execute the ruling (no appeals for SIMPLE preset)
         arbitration.executeRuling(arbInstanceId);
 
         // Check contractor received funds
         uint256 contractorBalanceAfter = contractor.balance;
-        assertEq(
-            contractorBalanceAfter - contractorBalanceBefore,
-            2 ether,
-            "Contractor should receive all funds"
-        );
+        assertEq(contractorBalanceAfter - contractorBalanceBefore, 2 ether, "Contractor should receive all funds");
 
         // Check dispute is resolved
         assertTrue(milestone.isDisputeResolved(milestoneInstanceId));
@@ -380,10 +328,7 @@ contract ArbitrationAgreementTest is Test {
 
         vm.prank(client);
         uint256 arbInstanceId = arbitration.createInstance(
-            address(milestone),
-            milestoneInstanceId,
-            arbitration.PRESET_SIMPLE(),
-            arbitrator
+            address(milestone), milestoneInstanceId, arbitration.PRESET_SIMPLE(), arbitrator
         );
 
         // Contractor files claim
@@ -397,12 +342,7 @@ contract ArbitrationAgreementTest is Test {
         // Note: Get constant BEFORE prank to avoid consuming the prank on staticcall
         uint8 respondentWins = arbitration.RULING_RESPONDENT_WINS();
         vm.prank(arbitrator);
-        arbitration.rule(
-            arbInstanceId,
-            respondentWins,
-            0,
-            keccak256("justification")
-        );
+        arbitration.rule(arbInstanceId, respondentWins, 0, keccak256("justification"));
 
         // Execute the ruling
         arbitration.executeRuling(arbInstanceId);
@@ -417,10 +357,7 @@ contract ArbitrationAgreementTest is Test {
 
         vm.prank(client);
         uint256 arbInstanceId = arbitration.createInstance(
-            address(milestone),
-            milestoneInstanceId,
-            arbitration.PRESET_SIMPLE(),
-            arbitrator
+            address(milestone), milestoneInstanceId, arbitration.PRESET_SIMPLE(), arbitrator
         );
 
         // File claim
@@ -469,10 +406,7 @@ contract ArbitrationAgreementTest is Test {
 
         vm.prank(client);
         uint256 arbInstanceId = arbitration.createInstance(
-            address(milestone),
-            milestoneInstanceId,
-            arbitration.PRESET_SIMPLE(),
-            arbitrator
+            address(milestone), milestoneInstanceId, arbitration.PRESET_SIMPLE(), arbitrator
         );
 
         ArbitrationAgreement.ArbitrationConfig memory config = arbitration.getConfig(arbInstanceId);
@@ -488,10 +422,7 @@ contract ArbitrationAgreementTest is Test {
 
         vm.prank(client);
         uint256 arbInstanceId = arbitration.createInstance(
-            address(milestone),
-            milestoneInstanceId,
-            arbitration.PRESET_BALANCED(),
-            arbitrator
+            address(milestone), milestoneInstanceId, arbitration.PRESET_BALANCED(), arbitrator
         );
 
         ArbitrationAgreement.ArbitrationConfig memory config = arbitration.getConfig(arbInstanceId);

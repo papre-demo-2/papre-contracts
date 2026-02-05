@@ -185,7 +185,11 @@ contract DeployFuji is Script {
         console2.log("SubcontractorSafetyNetAgreement:", address(safetyNetImpl));
 
         milestonePaymentImpl = new MilestonePaymentAgreement(
-            address(signatureClause), address(escrowClause), address(milestoneClause), address(milestoneAdapter)
+            address(signatureClause),
+            address(escrowClause),
+            address(milestoneClause),
+            address(milestoneAdapter),
+            address(0) // reputationAdapter - optional, can be deployed separately
         );
         console2.log("MilestonePaymentAgreement:", address(milestonePaymentImpl));
 

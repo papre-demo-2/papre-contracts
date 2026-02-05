@@ -19,11 +19,7 @@ interface IDisputable {
     /// @param instanceId The agreement instance being ruled upon
     /// @param ruling The ruling: 1=CLAIMANT_WINS, 2=RESPONDENT_WINS, 3=SPLIT
     /// @param splitBasisPoints If SPLIT, claimant's share in basis points (0-10000)
-    function executeArbitrationRuling(
-        uint256 instanceId,
-        uint8 ruling,
-        uint256 splitBasisPoints
-    ) external;
+    function executeArbitrationRuling(uint256 instanceId, uint8 ruling, uint256 splitBasisPoints) external;
 
     /// @notice Check if arbitration can be initiated for an instance
     /// @dev Returns true if: instance is funded, not already in dispute, not completed
@@ -47,21 +43,14 @@ interface IDisputable {
     /// @param instanceId The agreement instance to query
     /// @return claimant Default claimant address (e.g., contractor)
     /// @return respondent Default respondent address (e.g., client)
-    function getArbitrationParties(uint256 instanceId) external view returns (
-        address claimant,
-        address respondent
-    );
+    function getArbitrationParties(uint256 instanceId) external view returns (address claimant, address respondent);
 
     /// @notice Link an ArbitrationAgreement to this instance
     /// @dev Can be called at creation or later (with appropriate consent checks)
     /// @param instanceId The agreement instance to link
     /// @param arbitrationAgreement The ArbitrationAgreement contract address
     /// @param arbitrationInstanceId The instance ID within ArbitrationAgreement
-    function linkArbitration(
-        uint256 instanceId,
-        address arbitrationAgreement,
-        uint256 arbitrationInstanceId
-    ) external;
+    function linkArbitration(uint256 instanceId, address arbitrationAgreement, uint256 arbitrationInstanceId) external;
 
     /// @notice Check if an instance has arbitration linked
     /// @param instanceId The agreement instance to check
@@ -79,9 +68,7 @@ interface IDisputable {
 
     /// @notice Emitted when arbitration is linked to an instance
     event ArbitrationLinked(
-        uint256 indexed instanceId,
-        address indexed arbitrationAgreement,
-        uint256 arbitrationInstanceId
+        uint256 indexed instanceId, address indexed arbitrationAgreement, uint256 arbitrationInstanceId
     );
 
     /// @notice Emitted when an arbitration ruling is executed

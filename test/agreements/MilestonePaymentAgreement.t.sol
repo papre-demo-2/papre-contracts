@@ -62,7 +62,11 @@ contract MilestonePaymentAgreementTest is Test {
 
         // Deploy implementation
         implementation = new MilestonePaymentAgreement(
-            address(signatureClause), address(escrowClause), address(milestoneClause), address(milestoneAdapter)
+            address(signatureClause),
+            address(escrowClause),
+            address(milestoneClause),
+            address(milestoneAdapter),
+            address(0) // reputationAdapter - optional
         );
 
         // Create accounts
@@ -813,7 +817,11 @@ contract MilestonePaymentAgreementFuzzTest is Test {
         milestoneClause = new MilestoneClauseLogicV3();
         milestoneAdapter = new MilestoneEscrowAdapter(address(milestoneClause), address(escrowClause));
         implementation = new MilestonePaymentAgreement(
-            address(signatureClause), address(escrowClause), address(milestoneClause), address(milestoneAdapter)
+            address(signatureClause),
+            address(escrowClause),
+            address(milestoneClause),
+            address(milestoneAdapter),
+            address(0) // reputationAdapter
         );
     }
 
@@ -928,7 +936,11 @@ contract MilestonePaymentAgreementInvariantTest is Test {
         milestoneClause = new MilestoneClauseLogicV3();
         milestoneAdapter = new MilestoneEscrowAdapter(address(milestoneClause), address(escrowClause));
         implementation = new MilestonePaymentAgreement(
-            address(signatureClause), address(escrowClause), address(milestoneClause), address(milestoneAdapter)
+            address(signatureClause),
+            address(escrowClause),
+            address(milestoneClause),
+            address(milestoneAdapter),
+            address(0) // reputationAdapter
         );
 
         handler = new MilestonePaymentHandler(implementation);

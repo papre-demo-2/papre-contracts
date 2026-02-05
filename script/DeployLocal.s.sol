@@ -82,7 +82,11 @@ contract DeployLocal is Script {
         console2.log("FreelanceServiceAgreement:", address(freelanceServiceImpl));
 
         milestonePaymentImpl = new MilestonePaymentAgreement(
-            address(signatureClause), address(escrowClause), address(milestoneClause), address(milestoneAdapter)
+            address(signatureClause),
+            address(escrowClause),
+            address(milestoneClause),
+            address(milestoneAdapter),
+            address(0) // reputationAdapter - optional
         );
         console2.log("MilestonePaymentAgreement:", address(milestonePaymentImpl));
 

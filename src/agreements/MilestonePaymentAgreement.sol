@@ -6,6 +6,7 @@ import {SignatureClauseLogicV3} from "../clauses/attestation/SignatureClauseLogi
 import {EscrowClauseLogicV3} from "../clauses/financial/EscrowClauseLogicV3.sol";
 import {MilestoneClauseLogicV3} from "../clauses/orchestration/MilestoneClauseLogicV3.sol";
 import {MilestoneEscrowAdapter} from "../adapters/MilestoneEscrowAdapter.sol";
+import {ArbitrationReputationAdapter} from "../adapters/ArbitrationReputationAdapter.sol";
 import {IDisputable} from "../interfaces/IDisputable.sol";
 
 /// @title MilestonePaymentAgreement
@@ -70,6 +71,8 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
     EscrowClauseLogicV3 public immutable escrowClause;
     MilestoneClauseLogicV3 public immutable milestoneClause;
     MilestoneEscrowAdapter public immutable milestoneAdapter;
+    /// @notice Optional reputation adapter for arbitrator rating (can be address(0))
+    ArbitrationReputationAdapter public immutable reputationAdapter;
 
     // ═══════════════════════════════════════════════════════════════
     //                    AGREEMENT STORAGE
@@ -171,6 +174,8 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
     error DisputeAlreadyResolved();
     error CannotInitiateArbitrationNow();
     error InvalidRuling();
+    error ReputationAdapterNotConfigured();
+    error ReputationWindowNotOpen();
 
     // ═══════════════════════════════════════════════════════════════
     //                          EVENTS
@@ -196,6 +201,14 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
     event ClientSlotClaimed(uint256 indexed instanceId, address indexed client);
     event TrustedAttestorUpdated(address indexed attestor, bool trusted);
     event DocumentCIDSet(uint256 indexed instanceId, bytes32 cid);
+    event ReputationWindowOpened(
+        uint256 indexed instanceId,
+        bytes32 indexed reputationInstanceId,
+        address indexed arbitrator,
+        uint8 ruling,
+        uint48 windowClosesAt
+    );
+    event ArbitratorRated(uint256 indexed instanceId, address indexed rater, address indexed arbitrator, uint8 score);
 
     // ═══════════════════════════════════════════════════════════════
     //                        MODIFIERS
@@ -246,11 +259,19 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
     /// @param _escrowClause EscrowClauseLogicV3 address
     /// @param _milestoneClause MilestoneClauseLogicV3 address
     /// @param _milestoneAdapter MilestoneEscrowAdapter address
-    constructor(address _signatureClause, address _escrowClause, address _milestoneClause, address _milestoneAdapter) {
+    /// @param _reputationAdapter ArbitrationReputationAdapter address (optional, can be address(0))
+    constructor(
+        address _signatureClause,
+        address _escrowClause,
+        address _milestoneClause,
+        address _milestoneAdapter,
+        address _reputationAdapter
+    ) {
         signatureClause = SignatureClauseLogicV3(_signatureClause);
         escrowClause = EscrowClauseLogicV3(_escrowClause);
         milestoneClause = MilestoneClauseLogicV3(_milestoneClause);
         milestoneAdapter = MilestoneEscrowAdapter(_milestoneAdapter);
+        reputationAdapter = ArbitrationReputationAdapter(_reputationAdapter);
         // Note: We don't call _disableInitializers() here because
         // the singleton needs to remain usable for createInstance()
     }
@@ -880,11 +901,12 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
     // ═══════════════════════════════════════════════════════════════
 
     /// @inheritdoc IDisputable
-    function executeArbitrationRuling(
-        uint256 instanceId,
-        uint8 ruling,
-        uint256 splitBasisPoints
-    ) external override validInstance(instanceId) {
+    function executeArbitrationRuling(uint256 instanceId, uint8 ruling, uint256 splitBasisPoints)
+        external
+        virtual
+        override
+        validInstance(instanceId)
+    {
         InstanceData storage inst = _getMilestoneStorage().instances[instanceId];
 
         // Only the linked arbitration agreement can call this
@@ -906,8 +928,9 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
         }
 
         if (remainingAmount == 0) {
-            // No funds to distribute
+            // No funds to distribute - still open reputation window
             emit ArbitrationRulingExecuted(instanceId, ruling, splitBasisPoints, address(0), address(0));
+            _openArbitratorReputationWindow(instanceId, ruling);
             return;
         }
 
@@ -927,6 +950,9 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
         } else {
             revert InvalidRuling();
         }
+
+        // Open reputation window for rating the arbitrator (if adapter configured)
+        _openArbitratorReputationWindow(instanceId, ruling);
     }
 
     /// @inheritdoc IDisputable
@@ -941,10 +967,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
         // 2. Not already in dispute/resolved
         // 3. Not cancelled
         // 4. Not all milestones complete
-        return inst.funded &&
-               !inst.disputeResolved &&
-               !inst.cancelled &&
-               inst.completedMilestones < inst.milestoneCount;
+        return inst.funded && !inst.disputeResolved && !inst.cancelled && inst.completedMilestones < inst.milestoneCount;
     }
 
     /// @inheritdoc IDisputable
@@ -983,11 +1006,12 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
     }
 
     /// @inheritdoc IDisputable
-    function linkArbitration(
-        uint256 instanceId,
-        address arbitrationAgreement,
-        uint256 arbitrationInstanceId
-    ) external override validInstance(instanceId) notCancelled(instanceId) {
+    function linkArbitration(uint256 instanceId, address arbitrationAgreement, uint256 arbitrationInstanceId)
+        external
+        override
+        validInstance(instanceId)
+        notCancelled(instanceId)
+    {
         InstanceData storage inst = _getMilestoneStorage().instances[instanceId];
 
         // Can only link if not already linked
@@ -1010,24 +1034,12 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
     }
 
     /// @inheritdoc IDisputable
-    function hasArbitrationLinked(uint256 instanceId)
-        external
-        view
-        override
-        validInstance(instanceId)
-        returns (bool)
-    {
+    function hasArbitrationLinked(uint256 instanceId) external view override validInstance(instanceId) returns (bool) {
         return _getMilestoneStorage().instances[instanceId].arbitrationAgreement != address(0);
     }
 
     /// @inheritdoc IDisputable
-    function isDisputeResolved(uint256 instanceId)
-        external
-        view
-        override
-        validInstance(instanceId)
-        returns (bool)
-    {
+    function isDisputeResolved(uint256 instanceId) external view override validInstance(instanceId) returns (bool) {
         return _getMilestoneStorage().instances[instanceId].disputeResolved;
     }
 
@@ -1213,8 +1225,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
             if (abi.decode(fundedResult, (bool))) {
                 // Release this milestone to contractor
                 _delegateToClause(
-                    address(escrowClause),
-                    abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowIds[i]))
+                    address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowIds[i]))
                 );
                 inst.milestones[i].releasedAt = block.timestamp;
                 inst.completedMilestones++;
@@ -1233,8 +1244,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
                 // Refund this milestone to client (depositor)
                 // Use actionRefund which has no authorization check (authorization is at Agreement level)
                 _delegateToClause(
-                    address(escrowClause),
-                    abi.encodeCall(EscrowClauseLogicV3.actionRefund, (inst.escrowIds[i]))
+                    address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionRefund, (inst.escrowIds[i]))
                 );
             }
         }
@@ -1245,7 +1255,9 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
 
     /// @notice Split remaining milestones based on basis points
     /// @param splitBasisPoints Claimant's (contractor's) share in basis points (0-10000)
-    function _splitRemainingMilestones(InstanceData storage inst, uint256 instanceId, uint256 splitBasisPoints) internal {
+    function _splitRemainingMilestones(InstanceData storage inst, uint256 instanceId, uint256 splitBasisPoints)
+        internal
+    {
         // Calculate total remaining
         uint256 remainingAmount = 0;
         for (uint8 i = 0; i < inst.milestoneCount; i++) {
@@ -1278,8 +1290,7 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
                 if (releasedToContractor + milestoneAmount <= contractorAmount) {
                     // Release full milestone to contractor
                     _delegateToClause(
-                        address(escrowClause),
-                        abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowIds[i]))
+                        address(escrowClause), abi.encodeCall(EscrowClauseLogicV3.actionRelease, (inst.escrowIds[i]))
                     );
                     releasedToContractor += milestoneAmount;
                     inst.milestones[i].releasedAt = block.timestamp;
@@ -1301,6 +1312,274 @@ contract MilestonePaymentAgreement is AgreementBaseV3, IDisputable {
 
         inst.cancelled = true;
         emit ProjectCancelled(instanceId, address(this));
+    }
+
+    /// @notice Open a reputation window for rating the arbitrator after ruling
+    /// @dev Called internally after executeArbitrationRuling if adapter is configured
+    /// @param instanceId The agreement instance ID
+    /// @param ruling The ruling that was executed (1=CLAIMANT_WINS, 2=RESPONDENT_WINS, 3=SPLIT)
+    function _openArbitratorReputationWindow(uint256 instanceId, uint8 ruling) internal {
+        // Skip if no reputation adapter configured
+        if (address(reputationAdapter) == address(0)) return;
+
+        InstanceData storage inst = _getMilestoneStorage().instances[instanceId];
+
+        // Query arbitrator from linked arbitration agreement
+        // The arbitration agreement should expose queryArbitrator(arbitrationInstanceId)
+        (bool success, bytes memory data) = inst.arbitrationAgreement.staticcall(
+            abi.encodeWithSignature("queryArbitrator(uint256)", inst.arbitrationInstanceId)
+        );
+        if (!success || data.length < 32) return; // Can't get arbitrator, skip reputation
+
+        address arbitrator = abi.decode(data, (address));
+        if (arbitrator == address(0)) return;
+
+        // Build raters array: contractor (claimant) and client (respondent)
+        address[] memory raters = new address[](2);
+        raters[0] = inst.contractor; // claimant
+        raters[1] = inst.client; // respondent
+
+        // Build outcomes array based on ruling
+        // 1 = winner, 2 = loser, 3 = split
+        uint8[] memory outcomes = new uint8[](2);
+        if (ruling == 1) {
+            // CLAIMANT_WINS
+            outcomes[0] = 1; // contractor wins
+            outcomes[1] = 2; // client loses
+        } else if (ruling == 2) {
+            // RESPONDENT_WINS
+            outcomes[0] = 2; // contractor loses
+            outcomes[1] = 1; // client wins
+        } else {
+            // SPLIT or other
+            outcomes[0] = 3; // contractor split
+            outcomes[1] = 3; // client split
+        }
+
+        // Delegatecall to adapter to open reputation window
+        bytes32 agreementInstanceId = bytes32(instanceId);
+        (success, data) = address(reputationAdapter).delegatecall(
+            abi.encodeCall(
+                ArbitrationReputationAdapter.openReputationWindow, (agreementInstanceId, arbitrator, raters, outcomes, 0)
+            )
+        );
+
+        if (success) {
+            // Emit our own event with additional context
+            emit ReputationWindowOpened(
+                instanceId,
+                ArbitrationReputationAdapter(address(reputationAdapter)).getReputationInstanceId(agreementInstanceId),
+                arbitrator,
+                ruling,
+                uint48(block.timestamp + ArbitrationReputationAdapter(address(reputationAdapter)).DEFAULT_RATING_WINDOW())
+            );
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //                    REPUTATION FUNCTIONS
+    // ═══════════════════════════════════════════════════════════════
+
+    /// @notice Rate the arbitrator after a ruling
+    /// @dev Only callable by parties (client/contractor) during the rating window
+    /// @param instanceId The agreement instance ID
+    /// @param score Rating 1-5 stars
+    /// @param feedbackCID Optional IPFS CID for text feedback
+    function rateArbitrator(uint256 instanceId, uint8 score, bytes32 feedbackCID)
+        external
+        validInstance(instanceId)
+        onlyInstanceParty(instanceId)
+    {
+        if (address(reputationAdapter) == address(0)) revert ReputationAdapterNotConfigured();
+
+        bytes32 agreementInstanceId = bytes32(instanceId);
+
+        // Verify reputation window is open
+        bytes32 repInstanceId = _getReputationInstanceIdDelegated(agreementInstanceId);
+        if (repInstanceId == bytes32(0)) revert ReputationWindowNotOpen();
+
+        // Delegatecall to adapter
+        (bool success,) = address(reputationAdapter).delegatecall(
+            abi.encodeCall(ArbitrationReputationAdapter.rateArbitrator, (agreementInstanceId, score, feedbackCID))
+        );
+        require(success, "Rate failed");
+
+        // Get arbitrator for event
+        address arbitrator = _getRatedArbitratorDelegated(agreementInstanceId);
+        emit ArbitratorRated(instanceId, msg.sender, arbitrator, score);
+    }
+
+    /// @notice Update an existing arbitrator rating
+    /// @param instanceId The agreement instance ID
+    /// @param score New rating 1-5 stars
+    /// @param feedbackCID New feedback CID
+    function updateArbitratorRating(uint256 instanceId, uint8 score, bytes32 feedbackCID)
+        external
+        validInstance(instanceId)
+        onlyInstanceParty(instanceId)
+    {
+        if (address(reputationAdapter) == address(0)) revert ReputationAdapterNotConfigured();
+
+        bytes32 agreementInstanceId = bytes32(instanceId);
+
+        // Verify reputation window is open
+        bytes32 repInstanceId = _getReputationInstanceIdDelegated(agreementInstanceId);
+        if (repInstanceId == bytes32(0)) revert ReputationWindowNotOpen();
+
+        // Delegatecall to adapter
+        (bool success,) = address(reputationAdapter).delegatecall(
+            abi.encodeCall(
+                ArbitrationReputationAdapter.updateArbitratorRating, (agreementInstanceId, score, feedbackCID)
+            )
+        );
+        require(success, "Update failed");
+    }
+
+    /// @notice Close the reputation window early
+    /// @param instanceId The agreement instance ID
+    function closeReputationWindow(uint256 instanceId) external validInstance(instanceId) {
+        if (address(reputationAdapter) == address(0)) revert ReputationAdapterNotConfigured();
+
+        bytes32 agreementInstanceId = bytes32(instanceId);
+
+        // Verify reputation window is open
+        bytes32 repInstanceId = _getReputationInstanceIdDelegated(agreementInstanceId);
+        if (repInstanceId == bytes32(0)) revert ReputationWindowNotOpen();
+
+        // Delegatecall to adapter
+        (bool success,) = address(reputationAdapter).delegatecall(
+            abi.encodeCall(ArbitrationReputationAdapter.closeReputationWindow, (agreementInstanceId))
+        );
+        require(success, "Close failed");
+    }
+
+    /// @notice Check if caller can rate the arbitrator
+    /// @param instanceId The agreement instance ID
+    /// @return canRate Whether caller can submit a rating
+    /// @return reason Human-readable reason if not allowed
+    function canRateArbitrator(uint256 instanceId)
+        external
+        validInstance(instanceId)
+        returns (bool canRate, string memory reason)
+    {
+        if (address(reputationAdapter) == address(0)) {
+            return (false, "Reputation adapter not configured");
+        }
+
+        bytes32 agreementInstanceId = bytes32(instanceId);
+
+        (bool success, bytes memory data) = address(reputationAdapter).delegatecall(
+            abi.encodeCall(ArbitrationReputationAdapter.canRateArbitrator, (agreementInstanceId))
+        );
+
+        if (!success) return (false, "Query failed");
+        return abi.decode(data, (bool, string));
+    }
+
+    /// @notice Get the reputation window status
+    /// @param instanceId The agreement instance ID
+    /// @return isOpen Whether window is open
+    /// @return opensAt When window opened
+    /// @return closesAt When window closes
+    /// @return ratingsSubmitted Number of ratings submitted
+    /// @return ratersCount Total eligible raters
+    function getReputationWindowStatus(uint256 instanceId)
+        external
+        validInstance(instanceId)
+        returns (bool isOpen, uint48 opensAt, uint48 closesAt, uint8 ratingsSubmitted, uint8 ratersCount)
+    {
+        if (address(reputationAdapter) == address(0)) {
+            return (false, 0, 0, 0, 0);
+        }
+
+        bytes32 agreementInstanceId = bytes32(instanceId);
+
+        (bool success, bytes memory data) = address(reputationAdapter).delegatecall(
+            abi.encodeCall(ArbitrationReputationAdapter.getWindowStatus, (agreementInstanceId))
+        );
+
+        if (!success) return (false, 0, 0, 0, 0);
+        return abi.decode(data, (bool, uint48, uint48, uint8, uint8));
+    }
+
+    /// @notice Get the reputation instance ID for an agreement instance
+    /// @param instanceId The agreement instance ID
+    /// @return The reputation clause instance ID
+    function getReputationInstanceId(uint256 instanceId) external view validInstance(instanceId) returns (bytes32) {
+        if (address(reputationAdapter) == address(0)) return bytes32(0);
+        return reputationAdapter.getReputationInstanceId(bytes32(instanceId));
+    }
+
+    /// @notice Get the arbitrator being rated for an instance
+    /// @param instanceId The agreement instance ID
+    /// @return The arbitrator address
+    function getRatedArbitrator(uint256 instanceId) external view validInstance(instanceId) returns (address) {
+        if (address(reputationAdapter) == address(0)) return address(0);
+        return reputationAdapter.getRatedArbitrator(bytes32(instanceId));
+    }
+
+    /// @notice Get arbitrator's global reputation profile
+    /// @param arbitrator Address of arbitrator to query
+    /// @return totalRatings Total number of ratings received
+    /// @return averageScore Average score scaled by 100 (e.g., 450 = 4.50)
+    /// @return firstRatingAt When first rated
+    /// @return lastRatingAt When last rated
+    function getArbitratorProfile(address arbitrator)
+        external
+        returns (uint64 totalRatings, uint16 averageScore, uint48 firstRatingAt, uint48 lastRatingAt)
+    {
+        if (address(reputationAdapter) == address(0)) return (0, 0, 0, 0);
+
+        (bool success, bytes memory data) = address(reputationAdapter).delegatecall(
+            abi.encodeCall(ArbitrationReputationAdapter.getArbitratorProfile, (arbitrator))
+        );
+
+        if (!success) return (0, 0, 0, 0);
+        return abi.decode(data, (uint64, uint16, uint48, uint48));
+    }
+
+    /// @notice Get arbitrator's role-specific reputation
+    /// @param arbitrator Address of arbitrator to query
+    /// @return count Number of ratings as arbitrator
+    /// @return averageScore Average score scaled by 100
+    function getArbitratorRoleReputation(address arbitrator) external returns (uint32 count, uint16 averageScore) {
+        if (address(reputationAdapter) == address(0)) return (0, 0);
+
+        (bool success, bytes memory data) = address(reputationAdapter).delegatecall(
+            abi.encodeCall(ArbitrationReputationAdapter.getArbitratorRoleReputation, (arbitrator))
+        );
+
+        if (!success) return (0, 0);
+        return abi.decode(data, (uint32, uint16));
+    }
+
+    /// @notice Get the default rating window duration
+    /// @return Duration in seconds (14 days)
+    function getRatingWindowDuration() external view returns (uint32) {
+        if (address(reputationAdapter) == address(0)) return 0;
+        return reputationAdapter.DEFAULT_RATING_WINDOW();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //                    INTERNAL REPUTATION HELPERS
+    // ═══════════════════════════════════════════════════════════════
+
+    /// @notice Get reputation instance ID via delegatecall (for storage in agreement)
+    function _getReputationInstanceIdDelegated(bytes32 agreementInstanceId) internal returns (bytes32) {
+        (bool success, bytes memory data) = address(reputationAdapter).delegatecall(
+            abi.encodeCall(ArbitrationReputationAdapter.getReputationInstanceId, (agreementInstanceId))
+        );
+        if (!success) return bytes32(0);
+        return abi.decode(data, (bytes32));
+    }
+
+    /// @notice Get rated arbitrator via delegatecall (for storage in agreement)
+    function _getRatedArbitratorDelegated(bytes32 agreementInstanceId) internal returns (address) {
+        (bool success, bytes memory data) = address(reputationAdapter).delegatecall(
+            abi.encodeCall(ArbitrationReputationAdapter.getRatedArbitrator, (agreementInstanceId))
+        );
+        if (!success) return address(0);
+        return abi.decode(data, (address));
     }
 
     // Allow receiving ETH

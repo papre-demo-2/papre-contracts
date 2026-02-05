@@ -59,28 +59,28 @@ contract ArbitrationAgreement {
     uint8 public constant PRESET_CUSTOM = 4;
 
     // Resolution methods
-    uint8 public constant RESOLUTION_SINGLE_CREATOR = 1;   // Creator picks arbitrator
-    uint8 public constant RESOLUTION_SINGLE_MUTUAL = 2;    // Both parties must agree
-    uint8 public constant RESOLUTION_TWO_PARTY = 3;        // Each party picks one
-    uint8 public constant RESOLUTION_PANEL = 4;            // 3 arbitrators
+    uint8 public constant RESOLUTION_SINGLE_CREATOR = 1; // Creator picks arbitrator
+    uint8 public constant RESOLUTION_SINGLE_MUTUAL = 2; // Both parties must agree
+    uint8 public constant RESOLUTION_TWO_PARTY = 3; // Each party picks one
+    uint8 public constant RESOLUTION_PANEL = 4; // 3 arbitrators
 
     // Fee payment methods
-    uint8 public constant FEE_SPLIT = 1;          // Split 50/50
-    uint8 public constant FEE_LOSER_PAYS = 2;     // Loser pays all
-    uint8 public constant FEE_CLAIMANT_PAYS = 3;  // Claimant pays
+    uint8 public constant FEE_SPLIT = 1; // Split 50/50
+    uint8 public constant FEE_LOSER_PAYS = 2; // Loser pays all
+    uint8 public constant FEE_CLAIMANT_PAYS = 3; // Claimant pays
     uint8 public constant FEE_RESPONDENT_PAYS = 4; // Respondent pays
 
     // Withdrawal policies
-    uint8 public constant WITHDRAW_ANYTIME = 1;       // Before ruling
-    uint8 public constant WITHDRAW_MUTUAL = 2;        // Both must agree
-    uint8 public constant WITHDRAW_NOT_ALLOWED = 3;   // Cannot withdraw
+    uint8 public constant WITHDRAW_ANYTIME = 1; // Before ruling
+    uint8 public constant WITHDRAW_MUTUAL = 2; // Both must agree
+    uint8 public constant WITHDRAW_NOT_ALLOWED = 3; // Cannot withdraw
 
     // Voting methods (for multi-arbitrator)
     uint8 public constant VOTE_UNANIMOUS = 1;
     uint8 public constant VOTE_MAJORITY = 2;
 
     // Deadlock resolution
-    uint8 public constant DEADLOCK_TIEBREAKER = 1;     // Third arbitrator decides
+    uint8 public constant DEADLOCK_TIEBREAKER = 1; // Third arbitrator decides
     uint8 public constant DEADLOCK_FUNDS_RETURNED = 2; // Return to original state
     uint8 public constant DEADLOCK_TIMEOUT_DEFAULT = 3; // Default to claimant after timeout
 
@@ -91,18 +91,18 @@ contract ArbitrationAgreement {
     uint8 public constant REPLACE_TIMEOUT = 8;
 
     // Replacement methods
-    uint8 public constant REPLACE_BACKUP = 1;      // Use named backup
-    uint8 public constant REPLACE_MUTUAL = 2;      // Parties must agree
-    uint8 public constant REPLACE_COURT = 3;       // External appointment
+    uint8 public constant REPLACE_BACKUP = 1; // Use named backup
+    uint8 public constant REPLACE_MUTUAL = 2; // Parties must agree
+    uint8 public constant REPLACE_COURT = 3; // External appointment
 
     // States (bitmask)
-    uint16 internal constant CONFIGURED = 1 << 1;      // 0x0002
-    uint16 internal constant FILED = 1 << 4;           // 0x0010
+    uint16 internal constant CONFIGURED = 1 << 1; // 0x0002
+    uint16 internal constant FILED = 1 << 4; // 0x0010
     uint16 internal constant AWAITING_RULING = 1 << 5; // 0x0020
-    uint16 internal constant RULED = 1 << 6;           // 0x0040
-    uint16 internal constant EXECUTED = 1 << 2;        // 0x0004 (terminal)
-    uint16 internal constant APPEALED = 1 << 7;        // 0x0080
-    uint16 internal constant WITHDRAWN = 1 << 8;       // 0x0100 (terminal)
+    uint16 internal constant RULED = 1 << 6; // 0x0040
+    uint16 internal constant EXECUTED = 1 << 2; // 0x0004 (terminal)
+    uint16 internal constant APPEALED = 1 << 7; // 0x0080
+    uint16 internal constant WITHDRAWN = 1 << 8; // 0x0100 (terminal)
 
     // Rulings
     uint8 public constant RULING_NONE = 0;
@@ -116,22 +116,22 @@ contract ArbitrationAgreement {
 
     /// @notice Arbitration configuration (from preset or custom)
     struct ArbitrationConfig {
-        uint8 presetId;                   // Which preset (or CUSTOM)
-        uint8 resolutionMethod;           // How arbitrators are selected
-        uint64 evidenceWindowDays;        // Days for evidence submission
-        uint64 arbitratorTimeoutDays;     // Days before arbitrator is unresponsive
-        uint8 feePaymentMethod;           // Who pays arbitrator fees
-        uint256 feeAmount;                // Fee amount (in payment token)
-        bool appealsAllowed;              // Can parties appeal?
-        uint8 maxAppeals;                 // Maximum appeal rounds
-        uint8 appealArbitratorMethod;     // 1=same, 2=different, 3=panel
-        uint64 appealWindowDays;          // Days to file appeal after ruling
-        uint8 withdrawalPolicy;           // When can claimant withdraw?
-        uint8 replacementTriggers;        // Bitmask of replacement conditions
-        uint8 replacementMethod;          // How to replace arbitrator
-        uint8 votingMethod;               // For multi-arbitrator
-        uint8 deadlockResolution;         // How to handle ties
-        address backupArbitrator;         // If replacement method is BACKUP
+        uint8 presetId; // Which preset (or CUSTOM)
+        uint8 resolutionMethod; // How arbitrators are selected
+        uint64 evidenceWindowDays; // Days for evidence submission
+        uint64 arbitratorTimeoutDays; // Days before arbitrator is unresponsive
+        uint8 feePaymentMethod; // Who pays arbitrator fees
+        uint256 feeAmount; // Fee amount (in payment token)
+        bool appealsAllowed; // Can parties appeal?
+        uint8 maxAppeals; // Maximum appeal rounds
+        uint8 appealArbitratorMethod; // 1=same, 2=different, 3=panel
+        uint64 appealWindowDays; // Days to file appeal after ruling
+        uint8 withdrawalPolicy; // When can claimant withdraw?
+        uint8 replacementTriggers; // Bitmask of replacement conditions
+        uint8 replacementMethod; // How to replace arbitrator
+        uint8 votingMethod; // For multi-arbitrator
+        uint8 deadlockResolution; // How to handle ties
+        address backupArbitrator; // If replacement method is BACKUP
     }
 
     /// @notice Evidence item
@@ -207,8 +207,7 @@ contract ArbitrationAgreement {
     // ═══════════════════════════════════════════════════════════════
 
     // keccak256(abi.encode(uint256(keccak256("papre.agreement.arbitration.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant STORAGE_SLOT =
-        0x8a2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b00;
+    bytes32 private constant STORAGE_SLOT = 0x8a2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b00;
 
     function _getStorage() internal pure returns (ArbitrationStorage storage $) {
         assembly {
@@ -245,72 +244,30 @@ contract ArbitrationAgreement {
     // ═══════════════════════════════════════════════════════════════
 
     event ArbitrationCreated(
-        uint256 indexed instanceId,
-        address indexed linkedAgreement,
-        uint256 linkedInstanceId,
-        uint8 presetId
+        uint256 indexed instanceId, address indexed linkedAgreement, uint256 linkedInstanceId, uint8 presetId
     );
 
-    event ArbitratorSet(
-        uint256 indexed instanceId,
-        uint8 arbitratorIndex,
-        address arbitrator
-    );
+    event ArbitratorSet(uint256 indexed instanceId, uint8 arbitratorIndex, address arbitrator);
 
-    event ArbitratorConfirmed(
-        uint256 indexed instanceId,
-        address indexed confirmedBy,
-        bool isClaimant
-    );
+    event ArbitratorConfirmed(uint256 indexed instanceId, address indexed confirmedBy, bool isClaimant);
 
-    event ClaimFiled(
-        uint256 indexed instanceId,
-        address indexed claimant,
-        bytes32 claimHash,
-        uint64 evidenceDeadline
-    );
+    event ClaimFiled(uint256 indexed instanceId, address indexed claimant, bytes32 claimHash, uint64 evidenceDeadline);
 
     event EvidenceSubmitted(
-        uint256 indexed instanceId,
-        address indexed submitter,
-        bytes32 evidenceHash,
-        uint256 evidenceIndex
+        uint256 indexed instanceId, address indexed submitter, bytes32 evidenceHash, uint256 evidenceIndex
     );
 
-    event EvidenceClosed(
-        uint256 indexed instanceId,
-        uint256 claimantEvidenceCount,
-        uint256 respondentEvidenceCount
-    );
+    event EvidenceClosed(uint256 indexed instanceId, uint256 claimantEvidenceCount, uint256 respondentEvidenceCount);
 
-    event ArbitratorVoted(
-        uint256 indexed instanceId,
-        address indexed arbitrator,
-        uint8 vote
-    );
+    event ArbitratorVoted(uint256 indexed instanceId, address indexed arbitrator, uint8 vote);
 
-    event RulingIssued(
-        uint256 indexed instanceId,
-        uint8 ruling,
-        uint256 splitBasisPoints,
-        bytes32 justificationHash
-    );
+    event RulingIssued(uint256 indexed instanceId, uint8 ruling, uint256 splitBasisPoints, bytes32 justificationHash);
 
-    event AppealFiled(
-        uint256 indexed instanceId,
-        address indexed appellant,
-        uint8 appealNumber
-    );
+    event AppealFiled(uint256 indexed instanceId, address indexed appellant, uint8 appealNumber);
 
-    event RulingExecuted(
-        uint256 indexed instanceId,
-        uint8 ruling
-    );
+    event RulingExecuted(uint256 indexed instanceId, uint8 ruling);
 
-    event DisputeWithdrawn(
-        uint256 indexed instanceId,
-        address indexed withdrawnBy
-    );
+    event DisputeWithdrawn(uint256 indexed instanceId, address indexed withdrawnBy);
 
     // ═══════════════════════════════════════════════════════════════
     //                    CREATE INSTANCE
@@ -322,12 +279,10 @@ contract ArbitrationAgreement {
     /// @param presetId The preset to use (SIMPLE, BALANCED, PANEL, CUSTOM)
     /// @param arbitrator Primary arbitrator address (for SIMPLE/BALANCED)
     /// @return instanceId The created arbitration instance ID
-    function createInstance(
-        address linkedAgreement,
-        uint256 linkedInstanceId,
-        uint8 presetId,
-        address arbitrator
-    ) external returns (uint256 instanceId) {
+    function createInstance(address linkedAgreement, uint256 linkedInstanceId, uint8 presetId, address arbitrator)
+        external
+        returns (uint256 instanceId)
+    {
         if (linkedAgreement == address(0)) revert ZeroAddress();
         if (presetId == 0 || presetId > PRESET_CUSTOM) revert InvalidPreset();
 
@@ -498,11 +453,9 @@ contract ArbitrationAgreement {
         }
 
         uint256 evidenceIndex = $.evidence[instanceId].length;
-        $.evidence[instanceId].push(Evidence({
-            submitter: msg.sender,
-            evidenceHash: evidenceHash,
-            submittedAt: uint64(block.timestamp)
-        }));
+        $.evidence[instanceId].push(
+            Evidence({submitter: msg.sender, evidenceHash: evidenceHash, submittedAt: uint64(block.timestamp)})
+        );
         $.hasSubmittedEvidence[instanceId][msg.sender] = true;
 
         // Track counts
@@ -549,12 +502,7 @@ contract ArbitrationAgreement {
     /// @param ruling The ruling: 1=CLAIMANT_WINS, 2=RESPONDENT_WINS, 3=SPLIT
     /// @param splitBasisPoints If SPLIT, claimant's share (0-10000)
     /// @param justificationHash Hash of ruling justification (off-chain)
-    function rule(
-        uint256 instanceId,
-        uint8 ruling,
-        uint256 splitBasisPoints,
-        bytes32 justificationHash
-    ) external {
+    function rule(uint256 instanceId, uint8 ruling, uint256 splitBasisPoints, bytes32 justificationHash) external {
         ArbitrationStorage storage $ = _getStorage();
         ArbitrationInstance storage inst = $.instances[instanceId];
 
@@ -684,11 +632,8 @@ contract ArbitrationAgreement {
         inst.status = EXECUTED;
 
         // Execute ruling on linked agreement
-        IDisputable(inst.linkedAgreement).executeArbitrationRuling(
-            inst.linkedInstanceId,
-            inst.ruling,
-            inst.splitBasisPoints
-        );
+        IDisputable(inst.linkedAgreement)
+            .executeArbitrationRuling(inst.linkedInstanceId, inst.ruling, inst.splitBasisPoints);
 
         emit RulingExecuted(instanceId, inst.ruling);
     }
@@ -756,14 +701,18 @@ contract ArbitrationAgreement {
     }
 
     /// @notice Get instance basic info
-    function getInstance(uint256 instanceId) external view returns (
-        address linkedAgreement,
-        uint256 linkedInstanceId,
-        address claimant,
-        address respondent,
-        uint16 status,
-        uint8 presetId
-    ) {
+    function getInstance(uint256 instanceId)
+        external
+        view
+        returns (
+            address linkedAgreement,
+            uint256 linkedInstanceId,
+            address claimant,
+            address respondent,
+            uint16 status,
+            uint8 presetId
+        )
+    {
         ArbitrationInstance storage inst = _getStorage().instances[instanceId];
         return (
             inst.linkedAgreement,
@@ -776,30 +725,28 @@ contract ArbitrationAgreement {
     }
 
     /// @notice Get instance state
-    function getInstanceState(uint256 instanceId) external view returns (
-        uint64 filedAt,
-        uint64 evidenceDeadline,
-        uint8 ruling,
-        uint256 splitBasisPoints,
-        uint64 ruledAt,
-        uint8 appealCount
-    ) {
+    function getInstanceState(uint256 instanceId)
+        external
+        view
+        returns (
+            uint64 filedAt,
+            uint64 evidenceDeadline,
+            uint8 ruling,
+            uint256 splitBasisPoints,
+            uint64 ruledAt,
+            uint8 appealCount
+        )
+    {
         ArbitrationInstance storage inst = _getStorage().instances[instanceId];
-        return (
-            inst.filedAt,
-            inst.evidenceDeadline,
-            inst.ruling,
-            inst.splitBasisPoints,
-            inst.ruledAt,
-            inst.appealCount
-        );
+        return (inst.filedAt, inst.evidenceDeadline, inst.ruling, inst.splitBasisPoints, inst.ruledAt, inst.appealCount);
     }
 
     /// @notice Get arbitrators for an instance
-    function getArbitrators(uint256 instanceId) external view returns (
-        address[MAX_ARBITRATORS] memory arbitrators,
-        uint8 arbitratorCount
-    ) {
+    function getArbitrators(uint256 instanceId)
+        external
+        view
+        returns (address[MAX_ARBITRATORS] memory arbitrators, uint8 arbitratorCount)
+    {
         ArbitrationInstance storage inst = _getStorage().instances[instanceId];
         return (inst.arbitrators, inst.arbitratorCount);
     }
@@ -815,11 +762,11 @@ contract ArbitrationAgreement {
     }
 
     /// @notice Get evidence by index
-    function getEvidence(uint256 instanceId, uint256 index) external view returns (
-        address submitter,
-        bytes32 evidenceHash,
-        uint64 submittedAt
-    ) {
+    function getEvidence(uint256 instanceId, uint256 index)
+        external
+        view
+        returns (address submitter, bytes32 evidenceHash, uint64 submittedAt)
+    {
         Evidence storage e = _getStorage().evidence[instanceId][index];
         return (e.submitter, e.evidenceHash, e.submittedAt);
     }
@@ -830,15 +777,19 @@ contract ArbitrationAgreement {
     }
 
     /// @notice Debug function to check what rule() would see
-    function debugRuleView(uint256 instanceId, address caller) external view returns (
-        uint16 status,
-        uint64 evidenceDeadline,
-        uint8 arbitratorCount,
-        address arb0,
-        address arb1,
-        address arb2,
-        bool callerIsArb
-    ) {
+    function debugRuleView(uint256 instanceId, address caller)
+        external
+        view
+        returns (
+            uint16 status,
+            uint64 evidenceDeadline,
+            uint8 arbitratorCount,
+            address arb0,
+            address arb1,
+            address arb2,
+            bool callerIsArb
+        )
+    {
         ArbitrationInstance storage inst = _getStorage().instances[instanceId];
         status = inst.status;
         evidenceDeadline = inst.evidenceDeadline;
@@ -938,11 +889,9 @@ contract ArbitrationAgreement {
     }
 
     /// @notice Check panel votes and finalize if consensus reached
-    function _checkPanelVotes(
-        ArbitrationInstance storage inst,
-        uint256 splitBasisPoints,
-        bytes32 justificationHash
-    ) internal {
+    function _checkPanelVotes(ArbitrationInstance storage inst, uint256 splitBasisPoints, bytes32 justificationHash)
+        internal
+    {
         uint8 votingMethod = inst.config.votingMethod;
 
         if (votingMethod == VOTE_UNANIMOUS) {
@@ -960,7 +909,6 @@ contract ArbitrationAgreement {
 
             // Unanimous!
             _finalizeRuling(inst, firstVote, splitBasisPoints, justificationHash);
-
         } else if (votingMethod == VOTE_MAJORITY) {
             // Count votes
             uint8 claimantVotes = 0;
